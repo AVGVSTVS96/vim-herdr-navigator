@@ -285,6 +285,22 @@ function M.is_setup()
   return did_setup
 end
 
+-- Return the effective config (defaults merged with any setup() opts). Used by
+-- `:checkhealth herdr-vim-navigator`.
+function M.get_config()
+  return vim.deepcopy(config)
+end
+
+-- Resolve the configured helper to an executable path, or nil if not found.
+function M.resolve_helper()
+  return executable(config.helper)
+end
+
+-- True when running inside a Herdr session.
+function M.in_herdr()
+  return in_herdr()
+end
+
 M._defaults = defaults
 M._directions = directions
 

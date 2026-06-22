@@ -1,0 +1,166 @@
+*herdr-vim-navigator.txt*  Seamless Herdr + Neovim pane navigation
+
+==============================================================================
+CONTENTS                                          *herdr-vim-navigator-contents*
+
+  1. Introduction ........... |herdr-vim-navigator-introduction|
+  2. Requirements ........... |herdr-vim-navigator-requirements|
+  3. Setup .................. |herdr-vim-navigator-setup|
+  4. Behavior ............... |herdr-vim-navigator-behavior|
+  5. Options ................ |herdr-vim-navigator-options|
+  6. Commands ............... |herdr-vim-navigator-commands|
+  7. Herdr config ........... |herdr-vim-navigator-herdr-config|
+  8. Health ................. |herdr-vim-navigator-health|
+
+==============================================================================
+1. INTRODUCTION                               *herdr-vim-navigator-introduction*
+
+herdr-vim-navigator.nvim is the Neovim half of seamless pane navigation between
+Herdr panes and Neovim splits. It is a `christoomey/vim-tmux-navigator`
+equivalent for Herdr (https://herdr.dev/).
+
+Pair it with the Herdr-side helper, `herdr-vim-navigator`:
+https://github.com/AVGVSTVS96/herdr-vim-navigator
+
+A single set of <C-h/j/k/l> (and optionally <C-Arrow>) keys moves between
+Neovim windows and Herdr panes as if they were one grid.
+
+==============================================================================
+2. REQUIREMENTS                               *herdr-vim-navigator-requirements*
+
+- Neovim 0.8+ (0.10+ recommended; uses |vim.system()| when available)
+- Herdr, with the `herdr` CLI on your PATH
+- The `herdr-vim-navigator` helper installed and on your PATH
+
+==============================================================================
+3. SETUP                                             *herdr-vim-navigator-setup*
+
+With most plugin managers the plugin auto-calls setup() on load, so zero
+configuration is required. To pass options: >lua
+
+    require("herdr-vim-navigator").setup({
+      -- options, see |herdr-vim-navigator-options|
+    })
+<
+To disable auto-setup (e.g. to call setup() yourself at a specific time), set
+this before the plugin loads: >lua
+
+    vim.g.herdr_vim_navigator_auto_setup = false
+<
+The plugin only acts inside a Herdr session (HERDR_ENV=1 or HERDR_SOCKET_PATH
+set); elsewhere it stays inert.
+
+==============================================================================
+4. BEHAVIOR                                       *herdr-vim-navigator-behavior*
+
+Inside Neovim:
+
+1. <C-h/j/k/l> or <C-Arrow> first tries normal window navigation with
+   `wincmd h/j/k/l`.
+2. If the current window did not change (an edge), the plugin calls: >sh
+
+       herdr-vim-navigator focus <direction>
+<
+3. The helper focuses the neighboring Herdr pane.
+
+From a non-Neovim Herdr pane, Herdr keybindings call: >sh
+
+    herdr-vim-navigator dispatch <direction>
+<
+which decides whether to move Herdr focus or send <C-h/j/k/l> into Neovim.
+
+Floating pickers/explorers (Snacks, Telescope, mini.pick, fzf/fzf-lua,
+neo-tree, NvimTree, oil) often bounce `wincmd h` back inside Neovim. For those,
+left navigation from a focused picker float goes straight to Herdr. The list is
+configurable via `picker_filetype_patterns`.
+
+In `fzf`/`fzf-lua` terminal buffers the terminal-mode mappings pass the key
+through to the picker instead of navigating.
+
+==============================================================================
+5. OPTIONS                                         *herdr-vim-navigator-options*
+
+Defaults: >lua
+
+    require("herdr-vim-navigator").setup({
+      helper = "herdr-vim-navigator",
+      set_keymaps = true,
+      save_on_switch = 0, -- 0 never, 1 :update, 2 :wall
+      picker_filetype_patterns = {
+        "^snacks_picker",
+        "^Telescope",
+        "^minipick$",
+        "^fzf$",
+        "^fzf%-lua$",
+        "^neo%-tree$",
+        "^NvimTree$",
+        "^oil$",
+      },
+      keymaps = {
+        left = { "<C-h>", "<C-Left>" },
+        down = { "<C-j>", "<C-Down>" },
+        up = { "<C-k>", "<C-Up>" },
+        right = { "<C-l>", "<C-Right>" },
+      },
+    })
+<
+helper                                              *herdr-vim-navigator-helper*
+    Name or path of the helper command. Defaults to `herdr-vim-navigator` on
+    PATH. `~` is expanded.
+
+set_keymaps                                    *herdr-vim-navigator-set_keymaps*
+    When true (default), install the default keymaps and re-apply them after
+    `User VeryLazy` so they win over LazyVim's default window maps. Set to false
+    to manage keys yourself with the |herdr-vim-navigator-commands|.
+
+save_on_switch                              *herdr-vim-navigator-save_on_switch*
+    Save before leaving Neovim for another Herdr pane:
+    0 = never (default), 1 = `:update`, 2 = `:wall`.
+
+picker_filetype_patterns        *herdr-vim-navigator-picker_filetype_patterns*
+    Lua patterns matched against `&filetype` to detect floating pickers.
+
+keymaps                                            *herdr-vim-navigator-keymaps*
+    Per-direction lists of left-hand-side keys to map (normal + terminal mode).
+
+==============================================================================
+6. COMMANDS                                       *herdr-vim-navigator-commands*
+
+                                                          *:HerdrNavigateLeft*
+                                                          *:HerdrNavigateDown*
+                                                          *:HerdrNavigateUp*
+                                                          *:HerdrNavigateRight*
+    :HerdrNavigateLeft      Navigate left  (window, then Herdr at an edge).
+    :HerdrNavigateDown      Navigate down.
+    :HerdrNavigateUp        Navigate up.
+    :HerdrNavigateRight     Navigate right.
+
+Use these directly if you set `set_keymaps = false` and want custom mappings.
+
+==============================================================================
+7. HERDR CONFIG                               *herdr-vim-navigator-herdr-config*
+
+The helper must be wired into Herdr's keybindings. Generate a snippet with: >sh
+
+    herdr-vim-navigator config            # ctrl+h/j/k/l
+    herdr-vim-navigator config --arrows   # also ctrl+arrow keys
+<
+Paste the output into your Herdr config. Example block: >toml
+
+    [[keys.command]]
+    key = "ctrl+h"
+    type = "shell"
+    command = "herdr-vim-navigator dispatch left"
+    description = "vim-aware pane left"
+<
+==============================================================================
+8. HEALTH                                           *herdr-vim-navigator-health*
+
+Run diagnostics with: >vim
+
+    :checkhealth herdr-vim-navigator
+<
+It reports the Neovim version, whether you are in a Herdr session, whether
+setup() has run, and whether the helper is found and runnable.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
