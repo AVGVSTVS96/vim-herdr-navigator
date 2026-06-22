@@ -1,11 +1,12 @@
+import sys
 import unittest
-from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "bin" / "herdr-vim-navigator"
+# Make the package importable regardless of how the tests are invoked.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-navigator = SourceFileLoader("navigator", str(SCRIPT)).load_module()
+from herdr_vim_navigator import __version__
+from herdr_vim_navigator import cli as navigator
 
 
 class NavigatorTests(unittest.TestCase):
@@ -49,6 +50,35 @@ class NavigatorTests(unittest.TestCase):
         self.assertEqual(navigator.DIRECTIONS["right"].entry_wincmd, "h")
         self.assertEqual(navigator.DIRECTIONS["up"].entry_wincmd, "j")
         self.assertEqual(navigator.DIRECTIONS["down"].entry_wincmd, "k")
+
+
+class VersionTests(unittest.TestCase):
+    def test_version_is_a_dotted_string(self):
+        self.assertIsInstance(__version__, str)
+        self.assertRegex(__version__, r"^\d+\.\d+")
+
+
+class ConfigSnippetTests(unittest.TestCase):
+    def test_default_snippet_emits_all_dispatch_directions(self):
+        snippet = navigator.render_herdr_config()
+        for key, name in (("ctrl+h", "left"), ("ctrl+j", "down"), ("ctrl+k", "up"), ("ctrl+l", "right")):
+            self.assertIn(f'key = "{key}"', snippet)
+            self.assertIn(f"herdr-vim-navigator dispatch {name}", snippet)
+        # Arrow bindings are opt-in.
+        self.assertNotIn("ctrl+left", snippet)
+
+    def test_arrows_flag_adds_arrow_bindings(self):
+        snippet = navigator.render_herdr_config(arrows=True)
+        for key in ("ctrl+left", "ctrl+down", "ctrl+up", "ctrl+right"):
+            self.assertIn(f'key = "{key}"', snippet)
+
+    def test_custom_helper_name_is_used_in_commands(self):
+        snippet = navigator.render_herdr_config(helper="/opt/bin/hvn")
+        self.assertIn("/opt/bin/hvn dispatch left", snippet)
+
+    def test_splits_flag_adds_commented_examples(self):
+        snippet = navigator.render_herdr_config(splits=True)
+        self.assertIn("# command = \"herdr-vim-navigator split right\"", snippet)
 
 
 if __name__ == "__main__":
