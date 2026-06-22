@@ -54,6 +54,8 @@ Normal and terminal mode:
 
 In `fzf` terminal buffers the terminal-mode mappings pass the key through to fzf.
 
+The plugin also re-applies these mappings on `User VeryLazy` so they win over LazyVim's default `<C-h/j/k/l>` window-navigation mappings.
+
 ## Commands
 
 - `:HerdrNavigateLeft`

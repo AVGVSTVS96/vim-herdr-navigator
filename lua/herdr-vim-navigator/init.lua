@@ -194,6 +194,17 @@ local function create_autocmds()
     group = group,
     callback = M.apply_entry_marker,
   })
+
+  -- LazyVim installs its default <C-h/j/k/l> window maps on User VeryLazy.
+  -- Re-apply after that event so our edge-aware maps win without requiring
+  -- users to edit their personal keymaps.lua.
+  if config.set_keymaps then
+    vim.api.nvim_create_autocmd("User", {
+      group = group,
+      pattern = "VeryLazy",
+      callback = create_keymaps,
+    })
+  end
 end
 
 function M.setup(opts)
