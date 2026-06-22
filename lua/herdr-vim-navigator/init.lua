@@ -3,7 +3,6 @@ local M = {}
 local defaults = {
   helper = "herdr-vim-navigator",
   set_keymaps = true,
-  register_pane = true,
   save_on_switch = 0, -- 0 = never, 1 = :update current buffer, 2 = :wall
   keymaps = {
     left = { "<C-h>", "<C-Left>" },
@@ -38,28 +37,8 @@ local function cache_home()
   return vim.env.XDG_CACHE_HOME or (vim.env.HOME .. "/.cache")
 end
 
-local function cache_dir()
-  return cache_home() .. "/herdr-vim-navigator"
-end
-
-local function nvim_panes_dir()
-  return cache_dir() .. "/panes"
-end
-
 local function entry_dir()
-  return cache_dir() .. "/entry"
-end
-
-local function write_file(path, text)
-  local parent = vim.fn.fnamemodify(path, ":h")
-  vim.fn.mkdir(parent, "p")
-  local file = io.open(path, "w")
-  if not file then
-    return false
-  end
-  file:write(text)
-  file:close()
-  return true
+  return cache_home() .. "/herdr-vim-navigator/entry"
 end
 
 local function remove_file(path)
@@ -119,26 +98,6 @@ local function is_fzf_terminal()
   return vim.bo.filetype == "fzf" or vim.bo.filetype == "fzf-lua"
 end
 
-function M.register()
-  if not in_herdr() or not config.register_pane then
-    return
-  end
-  local id = pane_id()
-  if not id or id == "" then
-    return
-  end
-  write_file(nvim_panes_dir() .. "/" .. id, "nvim\n")
-end
-
-function M.unregister()
-  local id = pane_id()
-  if not id or id == "" then
-    return
-  end
-  remove_file(nvim_panes_dir() .. "/" .. id)
-  remove_file(entry_dir() .. "/" .. id)
-end
-
 function M.apply_entry_marker()
   if not in_herdr() then
     return
@@ -194,8 +153,6 @@ local function create_commands()
       M.navigate(direction)
     end, {})
   end
-  pcall(vim.api.nvim_create_user_command, "HerdrNavigatorRegister", M.register, {})
-  pcall(vim.api.nvim_create_user_command, "HerdrNavigatorUnregister", M.unregister, {})
 end
 
 local function map_normal(lhs, direction)
@@ -233,26 +190,10 @@ end
 local function create_autocmds()
   local group = vim.api.nvim_create_augroup("HerdrVimNavigator", { clear = true })
 
-  if config.register_pane then
-    vim.api.nvim_create_autocmd({ "VimEnter", "FocusGained", "WinEnter" }, {
-      group = group,
-      callback = function()
-        M.register()
-        M.apply_entry_marker()
-      end,
-    })
-
-    vim.api.nvim_create_autocmd("VimLeavePre", {
-      group = group,
-      callback = M.unregister,
-    })
-
-    -- Herdr can query process-info immediately, but marker files make neighbor
-    -- entry behavior reliable even during startup/focus races.
-    for _, delay in ipairs({ 0, 100, 500, 1000 }) do
-      vim.defer_fn(M.register, delay)
-    end
-  end
+  vim.api.nvim_create_autocmd({ "VimEnter", "FocusGained", "WinEnter" }, {
+    group = group,
+    callback = M.apply_entry_marker,
+  })
 end
 
 function M.setup(opts)

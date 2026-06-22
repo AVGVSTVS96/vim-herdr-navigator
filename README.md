@@ -60,16 +60,12 @@ In `fzf` terminal buffers the terminal-mode mappings pass the key through to fzf
 - `:HerdrNavigateDown`
 - `:HerdrNavigateUp`
 - `:HerdrNavigateRight`
-- `:HerdrNavigatorRegister`
-- `:HerdrNavigatorUnregister`
-
 ## Options
 
 ```lua
 require("herdr-vim-navigator").setup({
   helper = "herdr-vim-navigator",
   set_keymaps = true,
-  register_pane = true,
   save_on_switch = 0, -- 0 never, 1 :update, 2 :wall
   keymaps = {
     left = { "<C-h>", "<C-Left>" },
@@ -80,17 +76,9 @@ require("herdr-vim-navigator").setup({
 })
 ```
 
-## Pane registration and entry markers
+## Entry markers
 
-The plugin marks its pane here:
-
-```text
-${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/panes/<pane-id>
-```
-
-The helper can use that marker to know that a neighbor is Neovim.
-
-When Herdr focuses into a Neovim pane, the helper writes an entry marker here:
+The helper uses live `herdr pane process-info` to identify Neovim panes. When Herdr focuses into a Neovim pane, the helper writes an entry marker here:
 
 ```text
 ${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/entry/<pane-id>
