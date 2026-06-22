@@ -72,10 +72,6 @@ def cache_dir() -> Path:
     return cache_home() / "herdr-vim-navigator"
 
 
-def nvim_panes_dir() -> Path:
-    return cache_dir() / "panes"
-
-
 def entry_dir() -> Path:
     return cache_dir() / "entry"
 
@@ -206,13 +202,7 @@ def is_vim_like_processes(processes: Iterable[Mapping[str, Any]]) -> bool:
     return False
 
 
-def is_registered_nvim_pane(pane_id: str) -> bool:
-    return (nvim_panes_dir() / pane_id).exists()
-
-
 def is_vim_like_pane(pane_id: str) -> bool:
-    if is_registered_nvim_pane(pane_id):
-        return True
     info = process_info(pane_id)
     processes = info.get("foreground_processes", [])
     if not isinstance(processes, list):
@@ -268,19 +258,6 @@ def split_pane(pane_id: str, direction: Direction) -> None:
     run_herdr(args)
 
 
-def register_pane(pane_id: str) -> None:
-    path = nvim_panes_dir() / pane_id
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("nvim\n", encoding="utf-8")
-
-
-def unregister_pane(pane_id: str) -> None:
-    try:
-        (nvim_panes_dir() / pane_id).unlink()
-    except FileNotFoundError:
-        pass
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Herdr + Vim/Neovim pane navigator")
     parser.add_argument("--debug", action="store_true", help="print debug messages to stderr")
@@ -291,10 +268,6 @@ def build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(command)
         p.add_argument("direction", choices=sorted(DIRECTIONS))
         p.add_argument("--pane", dest="pane_id", help="source pane id; defaults to Herdr env/current pane")
-
-    for command in ("register", "unregister"):
-        p = sub.add_parser(command)
-        p.add_argument("--pane", dest="pane_id", help="pane id; defaults to Herdr env/current pane")
 
     return parser
 
@@ -318,10 +291,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             focus_pane(pane_id, DIRECTIONS[args.direction], debug_enabled=args.debug)
         elif args.command == "split":
             split_pane(pane_id, DIRECTIONS[args.direction])
-        elif args.command == "register":
-            register_pane(pane_id)
-        elif args.command == "unregister":
-            unregister_pane(pane_id)
         else:
             parser.error(f"unknown command: {args.command}")
     except Exception as exc:  # Keep Herdr keybinding failures readable.

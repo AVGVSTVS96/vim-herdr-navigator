@@ -65,8 +65,6 @@ You can add `ctrl+left/down/up/right` bindings in the same way.
 herdr-vim-navigator dispatch left   # Herdr keybinding entrypoint
 herdr-vim-navigator focus left      # called by Neovim at a Vim window edge
 herdr-vim-navigator split right     # optional split helper
-herdr-vim-navigator register        # mark this pane as a Neovim pane
-herdr-vim-navigator unregister      # remove the Neovim pane marker
 ```
 
 ## Design notes
@@ -77,6 +75,8 @@ The helper intentionally shells out to `herdr pane ...` commands instead of usin
 - `pane send-keys` forwards `ctrl+h/j/k/l` into Vim-like panes.
 - `pane neighbor` lets the helper prepare a small entry marker when moving into a Neovim pane.
 - `pane focus` moves Herdr focus.
+
+The helper intentionally uses live `pane process-info` rather than persistent Neovim pane registration, avoiding stale marker files when Neovim exits unexpectedly.
 
 The entry marker lives under:
 
