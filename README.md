@@ -56,7 +56,7 @@ In `fzf` terminal buffers the terminal-mode mappings pass the key through to fzf
 
 The plugin also re-applies these mappings on `User VeryLazy` so they win over LazyVim's default `<C-h/j/k/l>` window-navigation mappings.
 
-For Snacks explorer/picker floating windows, the plugin mirrors the old tmux workaround: when the focused Snacks float receives left navigation, it goes directly to Herdr instead of letting the float bounce focus back inside Neovim.
+For known floating pickers/explorers, the plugin mirrors the old tmux workaround: when the focused picker float receives left navigation, it goes directly to Herdr instead of letting the float bounce focus back inside Neovim. Defaults cover Snacks picker/explorer, Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, and oil.
 
 ## Commands
 
@@ -64,6 +64,7 @@ For Snacks explorer/picker floating windows, the plugin mirrors the old tmux wor
 - `:HerdrNavigateDown`
 - `:HerdrNavigateUp`
 - `:HerdrNavigateRight`
+
 ## Options
 
 ```lua
@@ -71,6 +72,16 @@ require("herdr-vim-navigator").setup({
   helper = "herdr-vim-navigator",
   set_keymaps = true,
   save_on_switch = 0, -- 0 never, 1 :update, 2 :wall
+  picker_filetype_patterns = {
+    "^snacks_picker",
+    "^Telescope",
+    "^minipick$",
+    "^fzf$",
+    "^fzf%-lua$",
+    "^neo%-tree$",
+    "^NvimTree$",
+    "^oil$",
+  },
   keymaps = {
     left = { "<C-h>", "<C-Left>" },
     down = { "<C-j>", "<C-Down>" },

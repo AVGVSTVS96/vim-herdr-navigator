@@ -4,6 +4,16 @@ local defaults = {
   helper = "herdr-vim-navigator",
   set_keymaps = true,
   save_on_switch = 0, -- 0 = never, 1 = :update current buffer, 2 = :wall
+  picker_filetype_patterns = {
+    "^snacks_picker",
+    "^Telescope",
+    "^minipick$",
+    "^fzf$",
+    "^fzf%-lua$",
+    "^neo%-tree$",
+    "^NvimTree$",
+    "^oil$",
+  },
   keymaps = {
     left = { "<C-h>", "<C-Left>" },
     down = { "<C-j>", "<C-Down>" },
@@ -105,8 +115,14 @@ local function current_window_is_floating()
   return vim.api.nvim_win_get_config(0).relative ~= ""
 end
 
-local function is_snacks_picker_buffer()
-  return vim.bo.filetype:match("^snacks_picker") ~= nil
+local function is_picker_like_buffer()
+  local filetype = vim.bo.filetype
+  for _, pattern in ipairs(config.picker_filetype_patterns or {}) do
+    if filetype:match(pattern) then
+      return true
+    end
+  end
+  return false
 end
 
 local function is_fzf_terminal()
@@ -149,12 +165,12 @@ function M.navigate(direction)
     return
   end
 
-  -- Snacks explorer/picker uses floating windows. Plain `wincmd h` from the
-  -- left floating list often just bounces focus back inside Snacks instead of
-  -- reaching the multiplexer edge. This mirrors the user's old tmux workaround:
-  -- when focused in a Snacks floating picker and moving left, go straight to
+  -- Floating pickers/explorers often intercept `wincmd h` from their leftmost
+  -- list/prompt window and bounce focus back inside Neovim instead of reaching
+  -- the multiplexer edge. This mirrors the user's old tmux workaround: when
+  -- focused in a known floating picker/explorer and moving left, go straight to
   -- Herdr; other directions can still use normal Vim window navigation.
-  if is_snacks_picker_buffer() and current_window_is_floating() then
+  if is_picker_like_buffer() and current_window_is_floating() then
     if direction == "left" then
       focus_herdr(direction)
     else
@@ -214,8 +230,8 @@ local function create_keymaps()
   end
 end
 
-local function setup_snacks_picker_keymaps()
-  if not is_snacks_picker_buffer() then
+local function setup_picker_keymaps()
+  if not is_picker_like_buffer() then
     return
   end
 
@@ -246,11 +262,11 @@ local function create_autocmds()
       callback = create_keymaps,
     })
 
-    -- Snacks installs buffer-local picker maps after startup. Re-assert our
-    -- maps buffer-locally when entering those buffers so Ctrl-h can escape left.
+    -- Pickers often install buffer-local maps after startup. Re-assert our maps
+    -- buffer-locally when entering known picker buffers so Ctrl-h can escape left.
     vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
       group = group,
-      callback = setup_snacks_picker_keymaps,
+      callback = setup_picker_keymaps,
     })
   end
 end
