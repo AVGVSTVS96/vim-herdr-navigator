@@ -4,6 +4,13 @@
 
 local failures = 0
 
+-- Make the smoke test deterministic even when it is launched from inside Herdr.
+-- Individual test cases opt back into Herdr env vars when they need them.
+vim.env.HERDR_ENV = nil
+vim.env.HERDR_SOCKET_PATH = nil
+vim.env.HERDR_PANE_ID = nil
+vim.env.HERDR_ACTIVE_PANE_ID = nil
+
 local function check(name, ok, detail)
   if ok then
     io.stdout:write("ok   - " .. name .. "\n")
