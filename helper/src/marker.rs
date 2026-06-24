@@ -27,8 +27,15 @@ pub fn entry_dir() -> PathBuf {
 }
 
 /// Write the `wincmd` hint for `pane_id`.
+///
+/// `wincmd` is always one of `h`/`j`/`k`/`l` (from the direction table). We
+/// write to a temp file and rename it into place so the plugin, which may read
+/// on any focus event, never observes a half-written marker. The rename is
+/// atomic on the same filesystem; the temp file shares the marker's directory.
 pub fn write_entry_marker(pane_id: &str, wincmd: &str) -> std::io::Result<()> {
     let dir = entry_dir();
     std::fs::create_dir_all(&dir)?;
-    std::fs::write(dir.join(pane_id), wincmd)
+    let tmp = dir.join(format!(".{pane_id}.tmp"));
+    std::fs::write(&tmp, wincmd)?;
+    std::fs::rename(&tmp, dir.join(pane_id))
 }

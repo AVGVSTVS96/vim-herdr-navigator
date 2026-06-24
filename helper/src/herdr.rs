@@ -44,6 +44,11 @@ struct HerdrError {
 /// returning an error — otherwise a stuck `herdr` would be left running as an
 /// orphan and undercut the timeout. `herdr` emits small JSON, so reading its
 /// piped output after it exits won't deadlock on a full pipe.
+///
+/// This kills the direct `herdr` process only, not a whole process tree. The
+/// `herdr` CLI is a single short-lived process that talks to the server over a
+/// socket and does not fork long-lived children, so killing it is sufficient;
+/// if it ever spawned grandchildren, those would not be reaped here.
 fn run_raw(args: &[String]) -> Result<std::process::Output> {
     let mut child = Command::new("herdr")
         .args(args)
