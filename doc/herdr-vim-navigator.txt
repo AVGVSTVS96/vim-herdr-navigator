@@ -75,8 +75,11 @@ neo-tree, NvimTree, oil) often bounce `wincmd h` back inside Neovim. For those,
 left navigation from a focused picker float goes straight to Herdr. The list is
 configurable via `picker_filetype_patterns`.
 
-In `fzf`/`fzf-lua` terminal buffers the terminal-mode mappings pass the key
-through to the picker instead of navigating.
+In picker buffers the plugin installs its navigation maps only on keys the
+picker has not already claimed; a picker's own buffer-local mapping (e.g.
+`<C-j>`/`<C-k>` to move the selection) is preserved. In `fzf`/`fzf-lua`
+terminal buffers the terminal-mode mappings pass the key through to the picker
+instead of navigating.
 
 ==============================================================================
 5. OPTIONS                                         *herdr-vim-navigator-options*
@@ -86,6 +89,7 @@ Defaults: >lua
     require("herdr-vim-navigator").setup({
       helper = "herdr-vim-navigator",
       set_keymaps = true,
+      reapply_after_lazyvim = true,
       save_on_switch = 0, -- 0 never, 1 :update, 2 :wall
       picker_filetype_patterns = {
         "^snacks_picker",
@@ -110,9 +114,15 @@ helper                                              *herdr-vim-navigator-helper*
     PATH. `~` is expanded.
 
 set_keymaps                                    *herdr-vim-navigator-set_keymaps*
-    When true (default), install the default keymaps and re-apply them after
-    `User VeryLazy` so they win over LazyVim's default window maps. Set to false
-    to manage keys yourself with the |herdr-vim-navigator-commands|.
+    When true (default), install the default keymaps on setup(). Set to false to
+    manage keys yourself with the |herdr-vim-navigator-commands|.
+
+reapply_after_lazyvim                  *herdr-vim-navigator-reapply_after_lazyvim*
+    When true (default) and set_keymaps is true, reassert the maps after
+    `User VeryLazy` so they stay edge-aware over LazyVim's default window maps.
+    The reapply only replaces a window-navigation map (`<C-w>hjkl`, a `wincmd`,
+    etc.) or one of our own maps — never a custom mapping you placed on the key.
+    Set to false to skip the reapply entirely.
 
 save_on_switch                              *herdr-vim-navigator-save_on_switch*
     Save before leaving Neovim for another Herdr pane:

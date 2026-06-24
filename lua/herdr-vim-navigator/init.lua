@@ -1,8 +1,24 @@
 local M = {}
 
+local uv = vim.uv or vim.loop
+
+-- All mappings we install carry this desc prefix so we can recognize our own
+-- maps later (e.g. when deciding whether a reapply may replace one).
+local MAP_DESC_PREFIX = "herdr-vim-navigator:"
+
+-- Markers older than this (seconds) are treated as stale and ignored. A real
+-- focus-into-pane applies the marker within milliseconds of the helper writing
+-- it; anything older is left over from a focus that never reached Neovim.
+local MARKER_STALE_SECONDS = 10
+
 local defaults = {
   helper = "herdr-vim-navigator",
   set_keymaps = true,
+  -- After LazyVim installs its default <C-h/j/k/l> window maps on User VeryLazy,
+  -- reassert ours so navigation stays edge-aware. The reapply only replaces a
+  -- window-navigation map (LazyVim's `<C-w>hjkl`, a `wincmd`, etc.) or one of
+  -- our own maps — never a custom user mapping. Set false to skip it entirely.
+  reapply_after_lazyvim = true,
   save_on_switch = 0, -- 0 = never, 1 = :update current buffer, 2 = :wall
   picker_filetype_patterns = {
     "^snacks_picker",
@@ -129,6 +145,135 @@ local function is_fzf_terminal()
   return vim.bo.filetype == "fzf" or vim.bo.filetype == "fzf-lua"
 end
 
+-- --------------------------------------------------------------------------- --
+-- Keymap policy
+-- --------------------------------------------------------------------------- --
+
+local function desc_for(direction)
+  return MAP_DESC_PREFIX .. " navigate " .. direction
+end
+
+local function maparg(mode, lhs)
+  -- Returns the mapping that would fire for `lhs` in the current buffer (a
+  -- buffer-local map shadows a global one), as a dict; {} when unmapped.
+  return vim.fn.maparg(lhs, mode, false, true) or {}
+end
+
+local function map_is_ours(m)
+  return type(m.desc) == "string" and m.desc:sub(1, #MAP_DESC_PREFIX) == MAP_DESC_PREFIX
+end
+
+local function map_is_buffer_local(m)
+  return (m.buffer or 0) ~= 0
+end
+
+-- True when a mapping is a window-navigation map we may safely replace: the
+-- LazyVim/standard `<C-w>hjkl` window maps, or a `wincmd h/j/k/l`. We never
+-- treat an unrelated user mapping (e.g. `<C-h>` -> `:bprev`) as replaceable.
+local function map_is_window_nav(m)
+  local rhs = m.rhs
+  if type(rhs) ~= "string" or rhs == "" then
+    return false
+  end
+  local norm = rhs:lower():gsub("%s+", "")
+  if norm:match("^<c%-w>[hjkl]$") then
+    return true
+  end
+  if norm:match("^<c%-w><c%-[hjkl]>$") then
+    return true
+  end
+  if norm:match("wincmd[hjkl]") then
+    return true
+  end
+  return false
+end
+
+local function set_normal_map(lhs, direction, buffer)
+  vim.keymap.set("n", lhs, function()
+    M.navigate(direction)
+  end, {
+    silent = true,
+    buffer = buffer,
+    desc = desc_for(direction),
+  })
+end
+
+local function set_terminal_map(lhs, direction, command, buffer)
+  vim.keymap.set("t", lhs, function()
+    if is_fzf_terminal() then
+      return lhs
+    end
+    return "<C-\\><C-n><cmd>" .. command .. "<cr>"
+  end, {
+    expr = true,
+    replace_keycodes = true,
+    silent = true,
+    buffer = buffer,
+    desc = desc_for(direction),
+  })
+end
+
+-- Decide whether we may install our global map over whatever currently holds
+-- `lhs`. `safe` (used by the LazyVim reapply) refuses to replace anything but a
+-- window-navigation map or one of our own; the initial install is unconditional
+-- (enabling the plugin's maps is what `set_keymaps = true` opts into).
+local function may_install_global(mode, lhs, safe)
+  local m = maparg(mode, lhs)
+  if vim.tbl_isempty(m) then
+    return true
+  end
+  if map_is_ours(m) then
+    return true
+  end
+  if not safe then
+    return true
+  end
+  return map_is_window_nav(m)
+end
+
+local function install_global_keymaps(safe)
+  for direction, keys in pairs(config.keymaps) do
+    local spec = directions[direction]
+    if spec then
+      for _, lhs in ipairs(keys) do
+        if may_install_global("n", lhs, safe) then
+          set_normal_map(lhs, direction)
+        end
+        if may_install_global("t", lhs, safe) then
+          set_terminal_map(lhs, direction, spec.command)
+        end
+      end
+    end
+  end
+end
+
+-- Install buffer-local maps in a picker/explorer buffer, but only where the
+-- picker has not claimed the key for itself. We never override a picker's own
+-- buffer-local mapping — in that case the picker's binding wins and navigation
+-- out of the picker in that direction uses the picker's key instead.
+local function install_picker_keymaps()
+  if not is_picker_like_buffer() then
+    return
+  end
+
+  local buf = vim.api.nvim_get_current_buf()
+  for direction, keys in pairs(config.keymaps) do
+    if directions[direction] then
+      for _, lhs in ipairs(keys) do
+        local m = maparg("n", lhs)
+        local picker_owns_it = map_is_buffer_local(m) and not map_is_ours(m)
+        if not picker_owns_it then
+          set_normal_map(lhs, direction, buf)
+        end
+      end
+    end
+  end
+end
+
+-- --------------------------------------------------------------------------- --
+-- Entry markers
+-- --------------------------------------------------------------------------- --
+
 function M.apply_entry_marker()
   if not in_herdr() then
     return
@@ -140,17 +285,27 @@ function M.apply_entry_marker()
   end
 
   local path = entry_dir() .. "/" .. id
+  local stat = uv.fs_stat(path)
+  if not stat then
+    return
+  end
+
   local file = io.open(path, "r")
   if not file then
     return
   end
-
   local marker = file:read("*a") or ""
   file:close()
+  -- The marker is single-use: remove it whether or not we end up applying it.
   remove_file(path)
 
-  local wincmd = marker:match("[hjkl]")
-  if not wincmd then
+  local mtime = (stat.mtime and stat.mtime.sec) or 0
+  if os.time() - mtime > MARKER_STALE_SECONDS then
+    return
+  end
+
+  local wincmd = marker:gsub("%s+", "")
+  if not wincmd:match("^[hjkl]$") then
     return
   end
 
@@ -158,6 +313,10 @@ function M.apply_entry_marker()
     pcall(vim.cmd, "999wincmd " .. wincmd)
   end)
 end
+
+-- --------------------------------------------------------------------------- --
+-- Navigation
+-- --------------------------------------------------------------------------- --
 
 function M.navigate(direction)
   local spec = directions[direction]
@@ -167,9 +326,10 @@ function M.navigate(direction)
 
   -- Floating pickers/explorers often intercept `wincmd h` from their leftmost
   -- list/prompt window and bounce focus back inside Neovim instead of reaching
-  -- the multiplexer edge. This mirrors the user's old tmux workaround: when
-  -- focused in a known floating picker/explorer and moving left, go straight to
-  -- Herdr; other directions can still use normal Vim window navigation.
+  -- the multiplexer edge. From a focused floating picker, treat left as an
+  -- escape straight to Herdr; other directions still use normal Vim window
+  -- navigation. Which filetypes count as pickers is configurable via
+  -- `picker_filetype_patterns`.
   if is_picker_like_buffer() and current_window_is_floating() then
     if direction == "left" then
       focus_herdr(direction)
@@ -189,58 +349,15 @@ function M.navigate(direction)
   focus_herdr(direction)
 end
 
+-- --------------------------------------------------------------------------- --
+-- Setup
+-- --------------------------------------------------------------------------- --
+
 local function create_commands()
   for direction, spec in pairs(directions) do
     pcall(vim.api.nvim_create_user_command, spec.command, function()
       M.navigate(direction)
     end, {})
-  end
-end
-
-local function map_normal(lhs, direction, opts)
-  opts = vim.tbl_extend("force", { silent = true, desc = "Navigate " .. direction }, opts or {})
-  vim.keymap.set("n", lhs, function()
-    M.navigate(direction)
-  end, opts)
-end
-
-local function map_terminal(lhs, direction, command)
-  vim.keymap.set("t", lhs, function()
-    if is_fzf_terminal() then
-      return lhs
-    end
-    return "<C-\\><C-n><cmd>" .. command .. "<cr>"
-  end, {
-    expr = true,
-    replace_keycodes = true,
-    silent = true,
-    desc = "Navigate " .. direction,
-  })
-end
-
-local function create_keymaps()
-  for direction, keys in pairs(config.keymaps) do
-    local spec = directions[direction]
-    if spec then
-      for _, lhs in ipairs(keys) do
-        map_normal(lhs, direction)
-        map_terminal(lhs, direction, spec.command)
-      end
-    end
-  end
-end
-
-local function setup_picker_keymaps()
-  if not is_picker_like_buffer() then
-    return
-  end
-
-  for direction, keys in pairs(config.keymaps) do
-    if directions[direction] then
-      for _, lhs in ipairs(keys) do
-        map_normal(lhs, direction, { buffer = true })
-      end
-    end
   end
 end
 
@@ -252,21 +369,27 @@ local function create_autocmds()
     callback = M.apply_entry_marker,
   })
 
-  -- LazyVim installs its default <C-h/j/k/l> window maps on User VeryLazy.
-  -- Re-apply after that event so our edge-aware maps win without requiring
-  -- users to edit their personal keymaps.lua.
-  if config.set_keymaps then
+  if config.set_keymaps and config.reapply_after_lazyvim then
+    -- LazyVim installs its default <C-h/j/k/l> window maps on User VeryLazy.
+    -- Reassert ours afterwards so they stay edge-aware — but only over those
+    -- window maps or our own (see may_install_global), never a user's custom
+    -- mapping.
     vim.api.nvim_create_autocmd("User", {
       group = group,
       pattern = "VeryLazy",
-      callback = create_keymaps,
+      callback = function()
+        install_global_keymaps(true)
+      end,
     })
+  end
 
-    -- Pickers often install buffer-local maps after startup. Re-assert our maps
-    -- buffer-locally when entering known picker buffers so Ctrl-h can escape left.
+  if config.set_keymaps then
+    -- Pickers install buffer-local maps after startup. Assert our maps
+    -- buffer-locally when entering known picker buffers, without clobbering the
+    -- picker's own keys.
     vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
       group = group,
-      callback = setup_picker_keymaps,
+      callback = install_picker_keymaps,
     })
   end
 end
@@ -275,7 +398,7 @@ function M.setup(opts)
   config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
   create_commands()
   if config.set_keymaps then
-    create_keymaps()
+    install_global_keymaps(false)
   end
   create_autocmds()
   did_setup = true

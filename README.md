@@ -57,9 +57,19 @@ From a non-Neovim Herdr pane, Herdr keybindings call `herdr-vim-navigator dispat
 
 This mirrors `vim-tmux-navigator`: Vim windows get first chance, the multiplexer gets focus at an edge.
 
-The plugin only acts inside a Herdr session (`HERDR_ENV=1` or `HERDR_SOCKET_PATH` set); elsewhere it stays inert. It also re-applies its maps on `User VeryLazy` so they win over LazyVim's default `<C-h/j/k/l>` window maps without you editing your personal keymaps.
+The plugin only acts inside a Herdr session (`HERDR_ENV=1` or `HERDR_SOCKET_PATH` set); elsewhere it stays inert.
 
-For known floating pickers/explorers, left navigation from a focused picker float goes straight to Herdr instead of bouncing focus back inside Neovim. Defaults cover Snacks picker/explorer, Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, and oil. In `fzf`/`fzf-lua` terminal buffers the terminal-mode mapping passes the key through to the picker.
+### Keymaps and LazyVim
+
+With `set_keymaps = true` (the default) the plugin installs its `<C-h/j/k/l>` (and `<C-Arrow>`) maps when `setup()` runs — the same opt-in model as `vim-tmux-navigator`.
+
+LazyVim installs its own `<C-h/j/k/l>` window maps later, on `User VeryLazy`. To stay edge-aware the plugin reasserts its maps after that event (`reapply_after_lazyvim`, on by default), but **only where it is safe**: it replaces a window-navigation map (LazyVim's `<C-w>hjkl`, a `wincmd h/j/k/l`, etc.) or one of its own maps. A custom mapping you put on one of these keys is never overwritten. Set `reapply_after_lazyvim = false` to skip the reapply, or `set_keymaps = false` to manage every key yourself via the [commands](#commands).
+
+### Pickers and explorers
+
+For known floating pickers/explorers, left navigation from a focused picker float goes straight to Herdr instead of bouncing focus back inside Neovim. Which filetypes count is configurable via `picker_filetype_patterns`; defaults cover Snacks picker/explorer, Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, and oil.
+
+In picker buffers the plugin installs its navigation maps **only on keys the picker has not already claimed**. If a picker binds one of these keys for its own use (e.g. `<C-j>`/`<C-k>` to move the selection), that binding is preserved and navigating out of the picker in that direction uses the picker's key. In `fzf`/`fzf-lua` terminal buffers the terminal-mode mapping passes the key through to the picker.
 
 ## Default keymaps
 
@@ -87,6 +97,7 @@ Defaults shown:
 require("herdr-vim-navigator").setup({
   helper = "herdr-vim-navigator", -- name or path of the helper command (~ is expanded)
   set_keymaps = true,             -- false: manage keys yourself via :HerdrNavigate* commands
+  reapply_after_lazyvim = true,   -- reassert maps after LazyVim's User VeryLazy (window-nav/our maps only)
   save_on_switch = 0,             -- 0 never, 1 :update, 2 :wall (save before leaving Neovim)
   picker_filetype_patterns = {    -- filetypes treated as floating pickers
     "^snacks_picker",

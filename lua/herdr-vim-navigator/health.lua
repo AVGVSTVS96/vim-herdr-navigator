@@ -90,6 +90,11 @@ function M.check()
       table.insert(keys, direction .. "=" .. table.concat(lhs, ","))
     end
     h.info("Keymaps enabled: " .. table.concat(keys, "  "))
+    if config.reapply_after_lazyvim then
+      h.info("Reapply after LazyVim: on (replaces window-nav or our own maps only)")
+    else
+      h.info("Reapply after LazyVim: off")
+    end
   else
     h.info("set_keymaps = false (using :HerdrNavigate* commands only)")
   end
