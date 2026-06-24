@@ -1,8 +1,9 @@
 //! Thin wrapper around the public `herdr` CLI.
 //!
 //! Like the original helper, this shells out to `herdr pane ...` commands and
-//! parses their JSON instead of speaking Herdr's socket protocol directly. The
-//! surface area is tiny, stable, and easy to debug.
+//! parses their JSON instead of speaking Herdr's socket protocol directly. This
+//! keeps the helper on Herdr's documented CLI surface instead of coupling it to
+//! private transport details.
 
 use std::process::{Command, Stdio};
 use std::thread;
@@ -41,9 +42,8 @@ struct HerdrError {
 /// Run `herdr <args>` with a timeout and return its captured output.
 ///
 /// We poll the child with `try_wait` and, on timeout, kill and reap it before
-/// returning an error — otherwise a stuck `herdr` would be left running as an
-/// orphan and undercut the timeout. `herdr` emits small JSON, so reading its
-/// piped output after it exits won't deadlock on a full pipe.
+/// returning an error. `herdr` emits small JSON, so reading its piped output
+/// after it exits is not expected to block on pipe capacity.
 ///
 /// This kills the direct `herdr` process only, not a whole process tree. The
 /// `herdr` CLI is a single short-lived process that talks to the server over a
