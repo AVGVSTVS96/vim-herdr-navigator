@@ -1,20 +1,5 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Build / packaging artifacts
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# Virtual environments
-.venv/
-venv/
+# Rust
+/target
 
 # OS
 .DS_Store
