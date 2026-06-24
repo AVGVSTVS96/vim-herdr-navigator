@@ -30,7 +30,8 @@ Neovim windows and Herdr panes as if they were one grid.
 
 - Neovim 0.8+ (0.10+ recommended; uses |vim.system()| when available)
 - Herdr, with the `herdr` CLI on your PATH
-- The `herdr-vim-navigator` helper installed and on your PATH
+- The `herdr-vim-navigator` helper (a small Rust binary) installed and on your
+  PATH
 
 ==============================================================================
 3. SETUP                                             *herdr-vim-navigator-setup*

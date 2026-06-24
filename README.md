@@ -11,7 +11,7 @@ Pair it with the Herdr-side helper: [**herdr-vim-navigator**](https://github.com
 
 - Neovim 0.8+ (0.10+ recommended)
 - [Herdr](https://herdr.dev/)
-- The [`herdr-vim-navigator`](https://github.com/AVGVSTVS96/herdr-vim-navigator) helper installed and on your `PATH`
+- The [`herdr-vim-navigator`](https://github.com/AVGVSTVS96/herdr-vim-navigator) helper (a small Rust binary) installed and on your `PATH`
 
 ## Install
 
@@ -169,8 +169,9 @@ Point the plugin at a local checkout and at a local helper build. Adjust the pat
   end,
   lazy = false,
   opts = {
-    -- point at the helper's bin/ entry point during development
-    helper = "~/projects/herdr-vim-navigator/bin/herdr-vim-navigator",
+    -- point at the helper's release build during development
+    -- (run `cargo build --release` in the helper repo first)
+    helper = "~/projects/herdr-vim-navigator/target/release/herdr-vim-navigator",
   },
 }
 ```
