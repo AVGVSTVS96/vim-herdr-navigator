@@ -4,10 +4,9 @@
 //! parses their JSON instead of speaking Herdr's socket protocol directly. The
 //! surface area is tiny, stable, and easy to debug.
 
-use std::process::Command;
-use std::sync::mpsc;
+use std::process::{Command, Stdio};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Deserialize;
@@ -17,6 +16,9 @@ use crate::detect::{self, Process};
 
 /// Bound each `herdr` invocation so a stuck socket can't hang a keybinding.
 const TIMEOUT: Duration = Duration::from_secs(2);
+
+/// How often to poll the child while waiting for it to exit.
+const POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 /// Top-level JSON envelope returned by every `herdr` CLI command. Note that the
 /// CLI exits 0 even on logical errors and signals them via `error`.
@@ -37,17 +39,42 @@ struct HerdrError {
 }
 
 /// Run `herdr <args>` with a timeout and return its captured output.
+///
+/// We poll the child with `try_wait` and, on timeout, kill and reap it before
+/// returning an error — otherwise a stuck `herdr` would be left running as an
+/// orphan and undercut the timeout. `herdr` emits small JSON, so reading its
+/// piped output after it exits won't deadlock on a full pipe.
 fn run_raw(args: &[String]) -> Result<std::process::Output> {
-    let owned = args.to_vec();
-    let (tx, rx) = mpsc::channel();
-    thread::spawn(move || {
-        let _ = tx.send(Command::new("herdr").args(&owned).output());
-    });
+    let mut child = Command::new("herdr")
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|err| anyhow!(err).context("failed to run `herdr` (is it on PATH?)"))?;
 
-    match rx.recv_timeout(TIMEOUT) {
-        Ok(Ok(output)) => Ok(output),
-        Ok(Err(err)) => Err(anyhow!(err).context("failed to run `herdr` (is it on PATH?)")),
-        Err(_) => bail!("herdr {} timed out after {:?}", args.join(" "), TIMEOUT),
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_status)) => {
+                return child
+                    .wait_with_output()
+                    .context("failed to read herdr output");
+            }
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    bail!("herdr {} timed out after {:?}", args.join(" "), TIMEOUT);
+                }
+                thread::sleep(POLL_INTERVAL);
+            }
+            Err(err) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(anyhow!(err).context("failed to wait on herdr"));
+            }
+        }
     }
 }
 

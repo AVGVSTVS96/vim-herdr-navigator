@@ -29,11 +29,14 @@ This project ports that idea to Herdr using the public `herdr` CLI.
 
 All options put a `herdr-vim-navigator` binary on your `PATH`.
 
-**cargo-binstall (prebuilt, no compile):**
+**cargo-binstall:**
 
 ```sh
 cargo binstall --git https://github.com/AVGVSTVS96/herdr-vim-navigator herdr-vim-navigator
 ```
+
+Fetches a prebuilt binary from the repo's GitHub releases when one is published;
+otherwise it falls back to building from source (like `cargo install`).
 
 **cargo install (build from a git checkout):**
 
