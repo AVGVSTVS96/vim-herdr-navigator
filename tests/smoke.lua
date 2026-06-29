@@ -73,8 +73,10 @@ check("our <C-j> reasserted in picker buffer", is_ours(maparg_dict("<C-j>"), "do
 check("our <C-h> installed in picker buffer", is_ours(maparg_dict("<C-h>"), "left"))
 vim.cmd("bwipeout!")
 
--- 5e. Entry markers: fresh-valid applies, stale/invalid are ignored, and every
--- marker is single-use (removed after read).
+-- 5e. Entry markers: opt-in via $HERDR_VIM_NAVIGATOR_ENTRY_MARKERS, the single
+-- switch read by both the helper (writer) and this plugin (reader). Off unless
+-- the env var is set; once on, a fresh-valid marker applies, stale/invalid are
+-- ignored, and every marker is single-use (removed after read).
 local uv = vim.uv or vim.loop
 local cache = vim.fn.tempname()
 vim.fn.mkdir(cache .. "/herdr-vim-navigator/entry", "p")
@@ -100,8 +102,22 @@ local function leftmost_window()
   return vim.api.nvim_get_current_win()
 end
 
--- Fresh, valid "l" marker should move focus away from the leftmost window.
+-- Off without the env var: a fresh marker is ignored.
+vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS = nil
 local lm = leftmost_window()
+write_marker("l", 0)
+nav.apply_entry_marker()
+vim.wait(50, function()
+  return false
+end)
+check("markers off without env var", vim.api.nvim_get_current_win() == lm)
+os.remove(marker_path)
+
+-- Enable for the remaining cases.
+vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS = "1"
+
+-- Fresh, valid "l" marker should move focus away from the leftmost window.
+lm = leftmost_window()
 write_marker("l", 0)
 nav.apply_entry_marker()
 vim.wait(100, function()

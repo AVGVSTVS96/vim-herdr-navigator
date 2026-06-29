@@ -19,6 +19,7 @@ local defaults = {
     "^fzf%-lua$",
     "^neo%-tree$",
     "^NvimTree$",
+    "^netrw$",
     "^oil$",
   },
   keymaps = {
@@ -42,6 +43,15 @@ local warned_missing_helper = false
 
 local function in_herdr()
   return vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil
+end
+
+-- Entry markers are opt-in and span both halves of the tool: the helper writes
+-- them only when $HERDR_VIM_NAVIGATOR_ENTRY_MARKERS is set, and this plugin
+-- reads them only when the same variable is set. One switch, both sides — and
+-- since Neovim inherits Herdr's environment, exporting it once covers both.
+local function entry_markers_enabled()
+  local value = vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS
+  return value == "1" or value == "true"
 end
 
 local function pane_id()
@@ -207,6 +217,9 @@ end
 -- --------------------------------------------------------------------------- --
 
 function M.apply_entry_marker()
+  if not entry_markers_enabled() then
+    return
+  end
   if not in_herdr() then
     return
   end
@@ -296,10 +309,12 @@ end
 local function create_autocmds()
   local group = vim.api.nvim_create_augroup("HerdrVimNavigator", { clear = true })
 
-  vim.api.nvim_create_autocmd({ "VimEnter", "FocusGained", "WinEnter" }, {
-    group = group,
-    callback = M.apply_entry_marker,
-  })
+  if entry_markers_enabled() then
+    vim.api.nvim_create_autocmd({ "VimEnter", "FocusGained", "WinEnter" }, {
+      group = group,
+      callback = M.apply_entry_marker,
+    })
+  end
 
   if config.set_keymaps then
     -- LazyVim installs its default <C-h/j/k/l> window maps on User VeryLazy.

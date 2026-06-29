@@ -16,8 +16,8 @@ CONTENTS                                          *herdr-vim-navigator-contents*
 1. INTRODUCTION                               *herdr-vim-navigator-introduction*
 
 herdr-vim-navigator.nvim is the Neovim half of seamless pane navigation between
-Herdr panes and Neovim splits. It is a `christoomey/vim-tmux-navigator`
-equivalent for Herdr (https://herdr.dev/).
+Herdr panes and Neovim splits. It is a port of `christoomey/vim-tmux-navigator`'s
+core h/j/k/l navigation to Herdr (https://herdr.dev/).
 
 Pair it with the Herdr-side helper, `herdr-vim-navigator`:
 https://github.com/AVGVSTVS96/herdr-vim-navigator
@@ -98,6 +98,7 @@ Defaults: >lua
         "^fzf%-lua$",
         "^neo%-tree$",
         "^NvimTree$",
+        "^netrw$",
         "^oil$",
       },
       keymaps = {
@@ -121,6 +122,16 @@ set_keymaps                                    *herdr-vim-navigator-set_keymaps*
 save_on_switch                              *herdr-vim-navigator-save_on_switch*
     Save before leaving Neovim for another Herdr pane:
     0 = never (default), 1 = `:update`, 2 = `:wall`.
+
+Entry markers                                *herdr-vim-navigator-entry_markers*
+    Opt-in, off by default. Moving from another Herdr pane into a Neovim pane can
+    land you on the split nearest the entered edge. This is enabled with a single
+    environment variable, not a setup() option: >sh
+
+        export HERDR_VIM_NAVIGATOR_ENTRY_MARKERS=1
+<
+    The helper writes the markers and this plugin (which inherits Herdr's
+    environment) reads them — one switch covers both halves.
 
 picker_filetype_patterns        *herdr-vim-navigator-picker_filetype_patterns*
     Lua patterns matched against `&filetype` to detect floating pickers.

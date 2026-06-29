@@ -1,7 +1,7 @@
 # herdr-vim-navigator.nvim
 
 Neovim half of seamless [Herdr](https://herdr.dev/) + Neovim pane navigation — a
-[`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator) equivalent for Herdr.
+port of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator)'s core `h/j/k/l` navigation to Herdr.
 
 A single set of `Ctrl-h/j/k/l` (and optionally `Ctrl-Arrow`) keys moves between Neovim splits and Herdr panes as if they were one grid: Neovim windows get first chance, and Herdr takes focus when Neovim hits an edge.
 
@@ -104,6 +104,7 @@ require("herdr-vim-navigator").setup({
     "^fzf%-lua$",
     "^neo%-tree$",
     "^NvimTree$",
+    "^netrw$",
     "^oil$",
   },
   keymaps = {
@@ -154,15 +155,17 @@ Reports the Neovim version, whether you're in a Herdr session, whether `setup()`
 :help herdr-vim-navigator
 ```
 
-## Entry markers
+## Entry markers (opt-in)
 
-The helper uses live `herdr pane process-info` to identify Neovim panes. When Herdr focuses into a Neovim pane, the helper writes an entry marker here:
+When you move from another Herdr pane into a Neovim pane, an entry marker lets the plugin land you on the split nearest the edge you entered from, instead of wherever the cursor last was. It's **off by default**.
 
-```text
-${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/entry/<pane-id>
+Enable it with a single environment variable — export it in your shell rc and restart Herdr:
+
+```sh
+export HERDR_VIM_NAVIGATOR_ENTRY_MARKERS=1
 ```
 
-The plugin reads it on focus and jumps to the Vim split nearest the edge that was entered.
+That one switch covers both halves: the helper writes the markers, and this plugin (which inherits Herdr's environment) reads them — there's no separate `setup()` option to keep in sync. The marker is a single-use file under `${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/entry/<pane-id>`; the plugin reads it on focus, jumps to the nearest split, and removes it (markers older than 10s are ignored).
 
 ## Local development
 
