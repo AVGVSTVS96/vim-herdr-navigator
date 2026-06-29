@@ -197,6 +197,13 @@ pub fn focus(pane_id: &str, direction: &str) -> Result<()> {
     call(&["pane", "focus", "--direction", direction, "--pane", pane_id]).map(drop)
 }
 
+/// Turn off zoom (maximize) on a pane. Idempotent: `herdr pane zoom --off` is a
+/// no-op (`already_unzoomed`) when the pane is not zoomed, so callers can invoke
+/// it unconditionally before a directional move.
+pub fn unzoom(pane_id: &str) -> Result<()> {
+    call(&["pane", "zoom", "--pane", pane_id, "--off"]).map(drop)
+}
+
 /// Split a pane right or down, inheriting `cwd` when known, and focus the split.
 pub fn split(pane_id: &str, direction: &str, cwd: Option<&str>) -> Result<()> {
     let mut args = vec![

@@ -78,7 +78,7 @@ fn vim_like_re() -> &'static Regex {
         Regex::new(concat!(
             r"(?i)^(?:",
             r"g?\.?view(?:diff)?(?:-wrapped)?|",
-            r"g?\.?vim(?:diff)?(?:-wrapped)?|",
+            r"g?\.?vi(?:m)?(?:diff)?(?:-wrapped)?|",
             r"g?\.?nvim(?:diff)?(?:-wrapped)?|",
             r"g?\.?lvim(?:diff)?(?:-wrapped)?|",
             r"gvim(?:diff)?(?:-wrapped)?|",
@@ -91,6 +91,23 @@ fn vim_like_re() -> &'static Regex {
     })
 }
 
+/// User-supplied extra detection pattern from `$HERDR_VIM_NAVIGATOR_PATTERN`.
+///
+/// When set, it is OR-ed into the built-in detection (it extends, never narrows,
+/// the set of "Vim-like" commands) — the Herdr counterpart to tmux's
+/// `@vim_navigator_pattern`. Matched case-insensitively and unanchored, like
+/// tmux's `=~`. An empty or invalid regex is ignored.
+fn user_re() -> Option<&'static Regex> {
+    static RE: OnceLock<Option<Regex>> = OnceLock::new();
+    RE.get_or_init(|| {
+        std::env::var("HERDR_VIM_NAVIGATOR_PATTERN")
+            .ok()
+            .filter(|pattern| !pattern.is_empty())
+            .and_then(|pattern| Regex::new(&format!("(?i){pattern}")).ok())
+    })
+    .as_ref()
+}
+
 /// Strip login-shell dashes (`-nvim`) and any leading path so we match on the
 /// bare executable name.
 pub fn executable_basename(value: &str) -> &str {
@@ -98,10 +115,15 @@ pub fn executable_basename(value: &str) -> &str {
     trimmed.rsplit('/').next().unwrap_or(trimmed)
 }
 
+/// True when `base` matches the built-in detection or the optional user pattern.
+fn matches_vim_like(base: &str, extra: Option<&Regex>) -> bool {
+    vim_like_re().is_match(base) || extra.is_some_and(|re| re.is_match(base))
+}
+
 /// True when `name` (a possibly path/dash-prefixed command) is a Vim-like editor
-/// or picker.
+/// or picker, honoring `$HERDR_VIM_NAVIGATOR_PATTERN`.
 pub fn is_vim_like_process_name(name: &str) -> bool {
-    vim_like_re().is_match(executable_basename(name))
+    matches_vim_like(executable_basename(name), user_re())
 }
 
 /// Candidate command strings for a process, in priority order: `argv[0]`, then
@@ -146,6 +168,7 @@ mod tests {
     #[test]
     fn detects_common_editors_and_pickers() {
         let names = [
+            "vi",
             "vim",
             "nvim",
             "nvimdiff",
@@ -217,6 +240,17 @@ mod tests {
             ..Default::default()
         }];
         assert!(!is_vim_like(&only_shells));
+    }
+
+    #[test]
+    fn user_pattern_extends_detection() {
+        let extra = Regex::new("(?i)ssh").expect("valid extra pattern");
+        // The user pattern adds new matches...
+        assert!(matches_vim_like("ssh", Some(&extra)));
+        assert!(!matches_vim_like("ssh", None));
+        // ...without disturbing the built-ins.
+        assert!(matches_vim_like("nvim", Some(&extra)));
+        assert!(!matches_vim_like("zsh", Some(&extra)));
     }
 
     #[test]

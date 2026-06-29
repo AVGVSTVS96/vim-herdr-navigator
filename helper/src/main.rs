@@ -101,6 +101,26 @@ fn debug(enabled: bool, message: &str) {
     }
 }
 
+/// True when `name` holds a truthy value (`1`/`true`).
+fn env_enabled(name: &str) -> bool {
+    matches!(std::env::var(name).ok().as_deref(), Some("1" | "true"))
+}
+
+/// Entry markers (jump to the split nearest the entered edge) are opt-in via a
+/// single switch: `HERDR_VIM_NAVIGATOR_ENTRY_MARKERS`. The helper writes them
+/// only when it is set, and the Neovim plugin (which inherits Herdr's
+/// environment) reads the same variable.
+fn entry_markers_enabled() -> bool {
+    env_enabled("HERDR_VIM_NAVIGATOR_ENTRY_MARKERS")
+}
+
+/// When `HERDR_VIM_NAVIGATOR_ZOOM=unzoom`, un-maximize the pane before a
+/// directional move. The default (`preserve`/unset) leaves Herdr's native zoom
+/// behavior untouched.
+fn unzoom_on_move() -> bool {
+    std::env::var("HERDR_VIM_NAVIGATOR_ZOOM").ok().as_deref() == Some("unzoom")
+}
+
 fn resolve_pane(pane_id: Option<String>) -> Result<String> {
     match pane_id {
         Some(id) if !id.is_empty() => Ok(id),
@@ -110,6 +130,9 @@ fn resolve_pane(pane_id: Option<String>) -> Result<String> {
 
 /// Prepare an entry marker if the neighbor in this direction is a Vim-like pane.
 fn prepare_entry_marker(source: &str, dir: &Direction, debug_enabled: bool) -> Result<()> {
+    if !entry_markers_enabled() {
+        return Ok(());
+    }
     match herdr::neighbor_pane_id(source, dir.name)? {
         Some(target) if target != source => {
             if herdr::is_vim_like_pane(&target)? {
@@ -135,6 +158,11 @@ fn prepare_entry_marker(source: &str, dir: &Direction, debug_enabled: bool) -> R
 }
 
 fn focus_pane(pane: &str, dir: &Direction, debug_enabled: bool) -> Result<()> {
+    if unzoom_on_move() {
+        if let Err(err) = herdr::unzoom(pane) {
+            debug(debug_enabled, &format!("could not unzoom {pane}: {err}"));
+        }
+    }
     prepare_entry_marker(pane, dir, debug_enabled)?;
     herdr::focus(pane, dir.name)
 }
