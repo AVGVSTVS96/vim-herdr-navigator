@@ -1,4 +1,4 @@
-//! Entry markers shared with the Neovim plugin.
+//! Entry markers shared with the Vim/Neovim plugin.
 //!
 //! When Herdr focuses into a Vim-like neighbor, we drop a one-character `wincmd`
 //! hint at `<cache>/vim-herdr-navigator/entry/<pane-id>`. The plugin reads it on

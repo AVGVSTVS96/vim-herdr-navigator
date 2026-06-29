@@ -3,8 +3,8 @@
 //!
 //! - From Herdr keybindings, `dispatch <direction>` decides whether to send the
 //!   Ctrl-h/j/k/l key into Vim/Neovim/FZF or move Herdr focus.
-//! - From Neovim, `focus <direction>` is called when Vim window navigation hits
-//!   an edge, so focus moves to the neighboring Herdr pane.
+//! - From Vim/Neovim, `focus <direction>` is called when editor window
+//!   navigation hits an edge, so focus moves to the neighboring Herdr pane.
 //! - `split <right|down>` mirrors a couple of tmux split bindings.
 
 mod config;
@@ -47,7 +47,7 @@ enum Command {
         #[arg(long = "pane")]
         pane_id: Option<String>,
     },
-    /// Move Herdr focus toward a neighboring pane (called by Neovim at an edge).
+    /// Move Herdr focus toward a neighboring pane (called by Vim/Neovim at an edge).
     Focus {
         direction: DirArg,
         #[arg(long = "pane")]
@@ -108,7 +108,7 @@ fn env_enabled(name: &str) -> bool {
 
 /// Entry markers (jump to the split nearest the entered edge) are opt-in via a
 /// single switch: `VIM_HERDR_NAVIGATOR_ENTRY_MARKERS`. The helper writes them
-/// only when it is set, and the Neovim plugin (which inherits Herdr's
+/// only when it is set, and the Vim/Neovim plugin (which inherits Herdr's
 /// environment) reads the same variable.
 fn entry_markers_enabled() -> bool {
     env_enabled("VIM_HERDR_NAVIGATOR_ENTRY_MARKERS")

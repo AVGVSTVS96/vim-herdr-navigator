@@ -129,7 +129,7 @@ fn str_at<'a>(value: &'a Value, path: &[&str]) -> Option<&'a str> {
 /// Resolve the current pane id from Herdr env vars, falling back to the CLI.
 ///
 /// `HERDR_ACTIVE_PANE_ID` is set for Herdr keybinding commands; `HERDR_PANE_ID`
-/// is set when called from inside a pane (e.g. from Neovim).
+/// is set when called from inside a pane (e.g. from Vim/Neovim).
 pub fn current_pane_id() -> Result<String> {
     for var in ["HERDR_ACTIVE_PANE_ID", "HERDR_PANE_ID"] {
         if let Some(value) = non_empty_env(var) {

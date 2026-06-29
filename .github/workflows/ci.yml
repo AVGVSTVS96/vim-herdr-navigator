@@ -21,7 +21,7 @@ jobs:
       - name: Test
         run: cargo test --all
 
-  smoke:
+  neovim-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,5 +29,15 @@ jobs:
         with:
           neovim: true
           version: stable
-      - name: Smoke test
+      - name: Neovim smoke test
         run: bash tests/run.sh
+
+  vim-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          version: stable
+      - name: Vim smoke test
+        run: bash tests/run-vim.sh
