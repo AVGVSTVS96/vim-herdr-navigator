@@ -20,7 +20,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use detect::Direction;
 
-const HELPER_NAME: &str = "herdr-vim-navigator";
+const HELPER_NAME: &str = "vim-herdr-navigator";
 
 #[derive(Parser)]
 #[command(
@@ -107,18 +107,18 @@ fn env_enabled(name: &str) -> bool {
 }
 
 /// Entry markers (jump to the split nearest the entered edge) are opt-in via a
-/// single switch: `HERDR_VIM_NAVIGATOR_ENTRY_MARKERS`. The helper writes them
+/// single switch: `VIM_HERDR_NAVIGATOR_ENTRY_MARKERS`. The helper writes them
 /// only when it is set, and the Neovim plugin (which inherits Herdr's
 /// environment) reads the same variable.
 fn entry_markers_enabled() -> bool {
-    env_enabled("HERDR_VIM_NAVIGATOR_ENTRY_MARKERS")
+    env_enabled("VIM_HERDR_NAVIGATOR_ENTRY_MARKERS")
 }
 
-/// When `HERDR_VIM_NAVIGATOR_ZOOM=unzoom`, un-maximize the pane before a
+/// When `VIM_HERDR_NAVIGATOR_ZOOM=unzoom`, un-maximize the pane before a
 /// directional move. The default (`preserve`/unset) leaves Herdr's native zoom
 /// behavior untouched.
 fn unzoom_on_move() -> bool {
-    std::env::var("HERDR_VIM_NAVIGATOR_ZOOM").ok().as_deref() == Some("unzoom")
+    std::env::var("VIM_HERDR_NAVIGATOR_ZOOM").ok().as_deref() == Some("unzoom")
 }
 
 fn resolve_pane(pane_id: Option<String>) -> Result<String> {

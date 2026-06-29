@@ -26,7 +26,7 @@ local function herdr_version(helper)
 end
 
 function M.check()
-  h.start("herdr-vim-navigator.nvim")
+  h.start("vim-herdr-navigator")
 
   -- Neovim version
   local v = vim.version and vim.version() or nil
@@ -44,9 +44,9 @@ function M.check()
     h.info("Not inside a Herdr session — the plugin stays inert until HERDR_ENV=1 (this is fine outside Herdr)")
   end
 
-  local ok, nav = pcall(require, "herdr-vim-navigator")
+  local ok, nav = pcall(require, "vim-herdr-navigator")
   if not ok then
-    h.error("Could not load herdr-vim-navigator: " .. tostring(nav))
+    h.error("Could not load vim-herdr-navigator: " .. tostring(nav))
     return
   end
 
@@ -71,7 +71,7 @@ function M.check()
   else
     h.error(
       "Helper not executable: " .. tostring(config.helper),
-      { "Install herdr-vim-navigator and ensure it is on PATH, or set opts.helper to its path." }
+      { "Install vim-herdr-navigator and ensure it is on PATH, or set opts.helper to its path." }
     )
   end
 

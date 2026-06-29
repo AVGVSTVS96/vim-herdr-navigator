@@ -1,5 +1,5 @@
 [package]
-name = "herdr-vim-navigator"
+name = "vim-herdr-navigator"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.74"
@@ -7,13 +7,13 @@ description = "Seamless Herdr + Vim/Neovim pane navigation — the Herdr side of
 readme = "README.md"
 license = "MIT"
 authors = ["Bassim Shahidy"]
-repository = "https://github.com/AVGVSTVS96/herdr-vim-navigator"
-homepage = "https://github.com/AVGVSTVS96/herdr-vim-navigator"
+repository = "https://github.com/AVGVSTVS96/vim-herdr-navigator"
+homepage = "https://github.com/AVGVSTVS96/vim-herdr-navigator"
 keywords = ["herdr", "vim", "neovim", "navigation", "terminal"]
 categories = ["command-line-utilities"]
 
 [[bin]]
-name = "herdr-vim-navigator"
+name = "vim-herdr-navigator"
 path = "src/main.rs"
 
 [dependencies]
@@ -22,7 +22,3 @@ clap = { version = "4", features = ["derive"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
-[profile.release]
-strip = true
-lto = true

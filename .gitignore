@@ -1,3 +1,7 @@
+# Rust
+/target
+
+# OS
 .DS_Store
 .luarc.json
 

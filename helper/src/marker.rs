@@ -1,7 +1,7 @@
 //! Entry markers shared with the Neovim plugin.
 //!
 //! When Herdr focuses into a Vim-like neighbor, we drop a one-character `wincmd`
-//! hint at `<cache>/herdr-vim-navigator/entry/<pane-id>`. The plugin reads it on
+//! hint at `<cache>/vim-herdr-navigator/entry/<pane-id>`. The plugin reads it on
 //! focus and jumps to the split nearest the edge that was entered.
 
 use std::path::PathBuf;
@@ -12,13 +12,13 @@ fn home() -> PathBuf {
         .unwrap_or_default()
 }
 
-/// `${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator`.
+/// `${XDG_CACHE_HOME:-~/.cache}/vim-herdr-navigator`.
 pub fn cache_dir() -> PathBuf {
     let base = std::env::var_os("XDG_CACHE_HOME")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| home().join(".cache"));
-    base.join("herdr-vim-navigator")
+    base.join("vim-herdr-navigator")
 }
 
 /// Directory holding per-pane entry markers.

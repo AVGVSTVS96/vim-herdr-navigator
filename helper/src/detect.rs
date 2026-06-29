@@ -91,7 +91,7 @@ fn vim_like_re() -> &'static Regex {
     })
 }
 
-/// User-supplied extra detection pattern from `$HERDR_VIM_NAVIGATOR_PATTERN`.
+/// User-supplied extra detection pattern from `$VIM_HERDR_NAVIGATOR_PATTERN`.
 ///
 /// When set, it is OR-ed into the built-in detection (it extends, never narrows,
 /// the set of "Vim-like" commands) — the Herdr counterpart to tmux's
@@ -100,7 +100,7 @@ fn vim_like_re() -> &'static Regex {
 fn user_re() -> Option<&'static Regex> {
     static RE: OnceLock<Option<Regex>> = OnceLock::new();
     RE.get_or_init(|| {
-        std::env::var("HERDR_VIM_NAVIGATOR_PATTERN")
+        std::env::var("VIM_HERDR_NAVIGATOR_PATTERN")
             .ok()
             .filter(|pattern| !pattern.is_empty())
             .and_then(|pattern| Regex::new(&format!("(?i){pattern}")).ok())
@@ -121,7 +121,7 @@ fn matches_vim_like(base: &str, extra: Option<&Regex>) -> bool {
 }
 
 /// True when `name` (a possibly path/dash-prefixed command) is a Vim-like editor
-/// or picker, honoring `$HERDR_VIM_NAVIGATOR_PATTERN`.
+/// or picker, honoring `$VIM_HERDR_NAVIGATOR_PATTERN`.
 pub fn is_vim_like_process_name(name: &str) -> bool {
     matches_vim_like(executable_basename(name), user_re())
 }

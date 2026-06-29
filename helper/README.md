@@ -1,9 +1,9 @@
-# herdr-vim-navigator
+# vim-herdr-navigator
 
 Seamless pane navigation between [Herdr](https://herdr.dev/) panes and Neovim splits — a port of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator)'s core `h/j/k/l` navigation to Herdr.
 
-This repo is the **Herdr-side helper**, a small Rust binary. Pair it with the Neovim plugin:
-[**herdr-vim-navigator.nvim**](https://github.com/AVGVSTVS96/herdr-vim-navigator.nvim).
+This directory contains the **Herdr-side helper**, a small Rust binary. Pair it with the Neovim plugin in the same repository:
+[**vim-herdr-navigator**](https://github.com/AVGVSTVS96/vim-herdr-navigator).
 
 With both installed, a single set of `Ctrl-h/j/k/l` (and optionally `Ctrl-Arrow`) keys moves between Neovim splits and Herdr panes as if they were one grid:
 
@@ -29,12 +29,12 @@ This project ports that idea to Herdr using the public `herdr` CLI.
 
 ## Install
 
-All options put a `herdr-vim-navigator` binary on your `PATH`.
+All options put a `vim-herdr-navigator` binary on your `PATH`.
 
 **cargo install (build from git):**
 
 ```sh
-cargo install --git https://github.com/AVGVSTVS96/herdr-vim-navigator
+cargo install --git https://github.com/AVGVSTVS96/vim-herdr-navigator --package vim-herdr-navigator
 ```
 
 This builds and installs into `~/.cargo/bin` (make sure it's on your `PATH`).
@@ -42,16 +42,16 @@ This builds and installs into `~/.cargo/bin` (make sure it's on your `PATH`).
 **From source:**
 
 ```sh
-git clone https://github.com/AVGVSTVS96/herdr-vim-navigator
-cd herdr-vim-navigator
+git clone https://github.com/AVGVSTVS96/vim-herdr-navigator
+cd vim-herdr-navigator
 cargo build --release
-# binary is at target/release/herdr-vim-navigator
+# binary is at target/release/vim-herdr-navigator
 ```
 
 **Symlink the release binary** onto your `PATH` (handy for local/dev use):
 
 ```sh
-ln -sf "$PWD/target/release/herdr-vim-navigator" ~/.local/bin/herdr-vim-navigator
+ln -sf "$PWD/target/release/vim-herdr-navigator" ~/.local/bin/vim-herdr-navigator
 ```
 
 Make sure the install target (`~/.cargo/bin`, `~/.local/bin`, etc.) is on `PATH`.
@@ -63,64 +63,64 @@ Make sure the install target (`~/.cargo/bin`, `~/.local/bin`, etc.) is on `PATH`
 Verify:
 
 ```sh
-herdr-vim-navigator --version
-herdr-vim-navigator doctor
+vim-herdr-navigator --version
+vim-herdr-navigator doctor
 ```
 
 ## Quick start
 
-1. Install this helper (above) and check it's healthy with `herdr-vim-navigator doctor`.
+1. Install this helper (above) and check it's healthy with `vim-herdr-navigator doctor`.
 2. Add the keybindings to your Herdr config. Generate a ready-to-paste snippet:
 
    ```sh
-   herdr-vim-navigator config            # ctrl+h/j/k/l
-   herdr-vim-navigator config --arrows   # also ctrl+arrow keys
+   vim-herdr-navigator config            # ctrl+h/j/k/l
+   vim-herdr-navigator config --arrows   # also ctrl+arrow keys
    ```
 
    Paste the output into your Herdr config's keybindings.
-3. Install the companion plugin [herdr-vim-navigator.nvim](https://github.com/AVGVSTVS96/herdr-vim-navigator.nvim).
+3. Install the companion plugin [vim-herdr-navigator](https://github.com/AVGVSTVS96/vim-herdr-navigator).
 
 ## Herdr config
 
-`herdr-vim-navigator config` prints exactly this (one block per direction):
+`vim-herdr-navigator config` prints exactly this (one block per direction):
 
 ```toml
 [[keys.command]]
 key = "ctrl+h"
 type = "shell"
-command = "herdr-vim-navigator dispatch left"
+command = "vim-herdr-navigator dispatch left"
 description = "vim-aware pane left"
 
 [[keys.command]]
 key = "ctrl+j"
 type = "shell"
-command = "herdr-vim-navigator dispatch down"
+command = "vim-herdr-navigator dispatch down"
 description = "vim-aware pane down"
 
 [[keys.command]]
 key = "ctrl+k"
 type = "shell"
-command = "herdr-vim-navigator dispatch up"
+command = "vim-herdr-navigator dispatch up"
 description = "vim-aware pane up"
 
 [[keys.command]]
 key = "ctrl+l"
 type = "shell"
-command = "herdr-vim-navigator dispatch right"
+command = "vim-herdr-navigator dispatch right"
 description = "vim-aware pane right"
 ```
 
-Pass `--arrows` to also bind `ctrl+left/down/up/right`, and `--splits` for commented split-binding examples. Use `--helper <name>` if your command isn't named `herdr-vim-navigator` (e.g. a dev path).
+Pass `--arrows` to also bind `ctrl+left/down/up/right`, and `--splits` for commented split-binding examples. Use `--helper <name>` if your command isn't named `vim-herdr-navigator` (e.g. a dev path).
 
 ## Commands
 
 ```sh
-herdr-vim-navigator dispatch left   # Herdr keybinding entrypoint
-herdr-vim-navigator focus left      # called by Neovim at a Vim window edge
-herdr-vim-navigator split right     # optional split helper (right|down)
-herdr-vim-navigator config          # print a Herdr keybinding snippet
-herdr-vim-navigator doctor          # environment diagnostics (alias: check)
-herdr-vim-navigator --version
+vim-herdr-navigator dispatch left   # Herdr keybinding entrypoint
+vim-herdr-navigator focus left      # called by Neovim at a Vim window edge
+vim-herdr-navigator split right     # optional split helper (right|down)
+vim-herdr-navigator config          # print a Herdr keybinding snippet
+vim-herdr-navigator doctor          # environment diagnostics (alias: check)
+vim-herdr-navigator --version
 ```
 
 Pass `--debug` to any command to print diagnostic messages to stderr.
@@ -133,17 +133,17 @@ The helper reads a few optional environment variables. Set them in your shell rc
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `HERDR_VIM_NAVIGATOR_PATTERN` | _(unset)_ | A regex OR-ed into the built-in Vim-like detection. Extends, never narrows, the set — the Herdr counterpart to tmux's `@vim_navigator_pattern`. Case-insensitive, unanchored. |
-| `HERDR_VIM_NAVIGATOR_ZOOM` | `preserve` | `preserve` keeps Herdr's native zoom across moves. `unzoom` un-maximizes the pane you move out of (runs `herdr pane zoom --off` before focusing). |
-| `HERDR_VIM_NAVIGATOR_ENTRY_MARKERS` | _(off)_ | Set to `1` so Neovim lands on the split nearest the entered edge. One switch: the helper writes the markers and the Neovim plugin (which inherits this variable) reads them — no separate plugin option. |
+| `VIM_HERDR_NAVIGATOR_PATTERN` | _(unset)_ | A regex OR-ed into the built-in Vim-like detection. Extends, never narrows, the set — the Herdr counterpart to tmux's `@vim_navigator_pattern`. Case-insensitive, unanchored. |
+| `VIM_HERDR_NAVIGATOR_ZOOM` | `preserve` | `preserve` keeps Herdr's native zoom across moves. `unzoom` un-maximizes the pane you move out of (runs `herdr pane zoom --off` before focusing). |
+| `VIM_HERDR_NAVIGATOR_ENTRY_MARKERS` | _(off)_ | Set to `1` so Neovim lands on the split nearest the entered edge. One switch: the helper writes the markers and the Neovim plugin (which inherits this variable) reads them — no separate plugin option. |
 
 ```sh
 # Treat extra programs as "Vim-like" (here: also keep nav keys inside ssh):
-export HERDR_VIM_NAVIGATOR_PATTERN='(view|l?n?vim?x?|fzf|ssh)'
+export VIM_HERDR_NAVIGATOR_PATTERN='(view|l?n?vim?x?|fzf|ssh)'
 # Un-maximize on directional moves instead of preserving zoom:
-export HERDR_VIM_NAVIGATOR_ZOOM=unzoom
-# Enable entry markers (also set entry_markers = true in the Neovim plugin):
-export HERDR_VIM_NAVIGATOR_ENTRY_MARKERS=1
+export VIM_HERDR_NAVIGATOR_ZOOM=unzoom
+# Enable entry markers:
+export VIM_HERDR_NAVIGATOR_ENTRY_MARKERS=1
 ```
 
 ## Not yet ported / limitations
@@ -166,7 +166,7 @@ It uses live `pane process-info` rather than persistent Neovim pane registration
 The entry marker lives under:
 
 ```text
-${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/entry/<pane-id>
+${XDG_CACHE_HOME:-~/.cache}/vim-herdr-navigator/entry/<pane-id>
 ```
 
 The Neovim plugin reads it on focus and jumps to the split nearest the edge that was entered.
@@ -175,12 +175,12 @@ The Neovim plugin reads it on focus and jumps to the split nearest the edge that
 
 The crate is laid out as:
 
-- `src/main.rs` — CLI (clap) and command dispatch
-- `src/herdr.rs` — `herdr` CLI invocation and JSON parsing (serde)
-- `src/detect.rs` — direction table and Vim-like process detection
-- `src/config.rs` — Herdr keybinding snippet rendering
-- `src/doctor.rs` — environment diagnostics
-- `src/marker.rs` — entry markers shared with the Neovim plugin
+- `helper/src/main.rs` — CLI (clap) and command dispatch
+- `helper/src/herdr.rs` — `herdr` CLI invocation and JSON parsing (serde)
+- `helper/src/detect.rs` — direction table and Vim-like process detection
+- `helper/src/config.rs` — Herdr keybinding snippet rendering
+- `helper/src/doctor.rs` — environment diagnostics
+- `helper/src/marker.rs` — entry markers shared with the Neovim plugin
 
 Build, format, lint, and test:
 

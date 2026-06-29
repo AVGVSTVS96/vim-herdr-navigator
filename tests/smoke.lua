@@ -21,8 +21,8 @@ local function check(name, ok, detail)
 end
 
 -- 1. Load the plugin file and the module.
-vim.cmd("runtime plugin/herdr-vim-navigator.lua")
-local ok, nav = pcall(require, "herdr-vim-navigator")
+vim.cmd("runtime plugin/vim-herdr-navigator.lua")
+local ok, nav = pcall(require, "vim-herdr-navigator")
 check("module loads", ok, nav)
 if not ok then
   vim.cmd("cq")
@@ -73,17 +73,17 @@ check("our <C-j> reasserted in picker buffer", is_ours(maparg_dict("<C-j>"), "do
 check("our <C-h> installed in picker buffer", is_ours(maparg_dict("<C-h>"), "left"))
 vim.cmd("bwipeout!")
 
--- 5e. Entry markers: opt-in via $HERDR_VIM_NAVIGATOR_ENTRY_MARKERS, the single
+-- 5e. Entry markers: opt-in via $VIM_HERDR_NAVIGATOR_ENTRY_MARKERS, the single
 -- switch read by both the helper (writer) and this plugin (reader). Off unless
 -- the env var is set; once on, a fresh-valid marker applies, stale/invalid are
 -- ignored, and every marker is single-use (removed after read).
 local uv = vim.uv or vim.loop
 local cache = vim.fn.tempname()
-vim.fn.mkdir(cache .. "/herdr-vim-navigator/entry", "p")
+vim.fn.mkdir(cache .. "/vim-herdr-navigator/entry", "p")
 vim.env.XDG_CACHE_HOME = cache
 vim.env.HERDR_ENV = "1"
 vim.env.HERDR_PANE_ID = "testpane"
-local marker_path = cache .. "/herdr-vim-navigator/entry/testpane"
+local marker_path = cache .. "/vim-herdr-navigator/entry/testpane"
 
 local function write_marker(content, age_seconds)
   local f = assert(io.open(marker_path, "w"))
@@ -103,7 +103,7 @@ local function leftmost_window()
 end
 
 -- Off without the env var: a fresh marker is ignored.
-vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS = nil
+vim.env.VIM_HERDR_NAVIGATOR_ENTRY_MARKERS = nil
 local lm = leftmost_window()
 write_marker("l", 0)
 nav.apply_entry_marker()
@@ -114,7 +114,7 @@ check("markers off without env var", vim.api.nvim_get_current_win() == lm)
 os.remove(marker_path)
 
 -- Enable for the remaining cases.
-vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS = "1"
+vim.env.VIM_HERDR_NAVIGATOR_ENTRY_MARKERS = "1"
 
 -- Fresh, valid "l" marker should move focus away from the leftmost window.
 lm = leftmost_window()
@@ -148,14 +148,14 @@ check("invalid marker removed after read", uv.fs_stat(marker_path) == nil)
 vim.cmd("silent! only")
 
 -- 6. Health module loads and :checkhealth runs through the proper framework.
-local health_ok, health = pcall(require, "herdr-vim-navigator.health")
+local health_ok, health = pcall(require, "vim-herdr-navigator.health")
 check("health module loads", health_ok, health)
 
-local hc_ok = pcall(vim.cmd, "checkhealth herdr-vim-navigator")
-check(":checkhealth herdr-vim-navigator runs", hc_ok)
+local hc_ok = pcall(vim.cmd, "checkhealth vim-herdr-navigator")
+check(":checkhealth vim-herdr-navigator runs", hc_ok)
 if hc_ok then
   local joined = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
-  check("health output mentions the plugin", joined:find("herdr%-vim%-navigator") ~= nil)
+  check("health output mentions the plugin", joined:find("vim%-herdr%-navigator") ~= nil)
 end
 
 io.stdout:write((failures == 0) and "\nAll smoke tests passed.\n" or ("\n" .. failures .. " failure(s).\n"))

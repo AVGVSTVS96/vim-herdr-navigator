@@ -1,25 +1,53 @@
-# herdr-vim-navigator.nvim
+# vim-herdr-navigator
 
-Neovim half of seamless [Herdr](https://herdr.dev/) + Neovim pane navigation — a
-port of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator)'s core `h/j/k/l` navigation to Herdr.
+Seamless [Herdr](https://herdr.dev/) + Neovim pane navigation — a port of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator)'s core `h/j/k/l` navigation to Herdr.
+
+This monorepo contains both halves needed today:
+
+- the Neovim runtime plugin at the repo root (`plugin/`, `lua/`, `doc/`)
+- the Herdr-side Rust helper in `helper/`
 
 A single set of `Ctrl-h/j/k/l` (and optionally `Ctrl-Arrow`) keys moves between Neovim splits and Herdr panes as if they were one grid: Neovim windows get first chance, and Herdr takes focus when Neovim hits an edge.
-
-Pair it with the Herdr-side helper: [**herdr-vim-navigator**](https://github.com/AVGVSTVS96/herdr-vim-navigator).
 
 ## Requirements
 
 - Neovim 0.8+ (0.10+ recommended)
 - [Herdr](https://herdr.dev/)
-- The [`herdr-vim-navigator`](https://github.com/AVGVSTVS96/herdr-vim-navigator) helper (a small Rust binary) installed and on your `PATH`
+- The [`vim-herdr-navigator`](https://github.com/AVGVSTVS96/vim-herdr-navigator) helper (a small Rust binary) installed and on your `PATH`
 
 ## Install
 
-### lazy.nvim
+### Helper binary
+
+Install the Rust helper first so `vim-herdr-navigator` is on your `PATH`:
+
+```sh
+cargo install --git https://github.com/AVGVSTVS96/vim-herdr-navigator --package vim-herdr-navigator
+```
+
+For local development from a clone:
+
+```sh
+git clone https://github.com/AVGVSTVS96/vim-herdr-navigator
+cd vim-herdr-navigator
+cargo build --release
+ln -sf "$PWD/target/release/vim-herdr-navigator" ~/.local/bin/vim-herdr-navigator
+```
+
+Verify:
+
+```sh
+vim-herdr-navigator --version
+vim-herdr-navigator doctor
+```
+
+### Neovim plugin
+
+#### lazy.nvim
 
 ```lua
 {
-  "AVGVSTVS96/herdr-vim-navigator.nvim",
+  "AVGVSTVS96/vim-herdr-navigator",
   -- Only load inside a Herdr session.
   cond = function()
     return vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil
@@ -29,19 +57,19 @@ Pair it with the Herdr-side helper: [**herdr-vim-navigator**](https://github.com
 }
 ```
 
-Zero config: `opts = {}` uses the defaults, and the helper is found on `PATH` as `herdr-vim-navigator`. See [Options](#options) to customize.
+Zero config: `opts = {}` uses the defaults, and the helper is found on `PATH` as `vim-herdr-navigator`. See [Options](#options) to customize.
 
-### vim.pack (Neovim 0.12+)
+#### vim.pack (Neovim 0.12+)
 
 ```lua
-vim.pack.add({ "https://github.com/AVGVSTVS96/herdr-vim-navigator.nvim" })
+vim.pack.add({ "https://github.com/AVGVSTVS96/vim-herdr-navigator" })
 -- setup() is auto-called on load; call it explicitly only to pass options:
--- require("herdr-vim-navigator").setup({})
+-- require("vim-herdr-navigator").setup({})
 ```
 
-### Other managers
+#### Other managers
 
-Any manager works. After install, the plugin auto-calls `setup()` on load; pass options with `require("herdr-vim-navigator").setup({ ... })`.
+Any manager works. After install, the plugin auto-calls `setup()` on load; pass options with `require("vim-herdr-navigator").setup({ ... })`.
 
 Then wire up the Herdr side — see [Herdr config](#herdr-config).
 
@@ -50,10 +78,10 @@ Then wire up the Herdr side — see [Herdr config](#herdr-config).
 Inside Neovim:
 
 1. `Ctrl-h/j/k/l` or `Ctrl-Arrow` first tries normal Vim window navigation with `wincmd h/j/k/l`.
-2. If the current Neovim window did not change (an edge), the plugin calls `herdr-vim-navigator focus <direction>`.
+2. If the current Neovim window did not change (an edge), the plugin calls `vim-herdr-navigator focus <direction>`.
 3. The helper focuses the neighboring Herdr pane.
 
-From a non-Neovim Herdr pane, Herdr keybindings call `herdr-vim-navigator dispatch <direction>`, which decides whether to move Herdr focus or send `ctrl+h/j/k/l` into Neovim.
+From a non-Neovim Herdr pane, Herdr keybindings call `vim-herdr-navigator dispatch <direction>`, which decides whether to move Herdr focus or send `ctrl+h/j/k/l` into Neovim.
 
 This mirrors `vim-tmux-navigator`: Vim windows get first chance, the multiplexer gets focus at an edge.
 
@@ -92,8 +120,8 @@ Use these if you set `set_keymaps = false` and want custom mappings.
 Defaults shown:
 
 ```lua
-require("herdr-vim-navigator").setup({
-  helper = "herdr-vim-navigator", -- name or path of the helper command (~ is expanded)
+require("vim-herdr-navigator").setup({
+  helper = "vim-herdr-navigator", -- name or path of the helper command (~ is expanded)
   set_keymaps = true,             -- false: manage keys yourself via :HerdrNavigate* commands
   save_on_switch = 0,             -- 0 never, 1 :update, 2 :wall (save before leaving Neovim)
   picker_filetype_patterns = {    -- filetypes treated as floating pickers
@@ -119,7 +147,7 @@ require("herdr-vim-navigator").setup({
 To call `setup()` yourself at a specific time, disable auto-setup before the plugin loads:
 
 ```lua
-vim.g.herdr_vim_navigator_auto_setup = false
+vim.g.vim_herdr_navigator_auto_setup = false
 ```
 
 ## Herdr config
@@ -127,8 +155,8 @@ vim.g.herdr_vim_navigator_auto_setup = false
 The helper must be bound in Herdr's keybindings. Generate a ready-to-paste snippet with the helper:
 
 ```sh
-herdr-vim-navigator config            # ctrl+h/j/k/l
-herdr-vim-navigator config --arrows   # also ctrl+arrow keys
+vim-herdr-navigator config            # ctrl+h/j/k/l
+vim-herdr-navigator config --arrows   # also ctrl+arrow keys
 ```
 
 It prints one block per direction, e.g.:
@@ -137,14 +165,14 @@ It prints one block per direction, e.g.:
 [[keys.command]]
 key = "ctrl+h"
 type = "shell"
-command = "herdr-vim-navigator dispatch left"
+command = "vim-herdr-navigator dispatch left"
 description = "vim-aware pane left"
 ```
 
 ## Health
 
 ```vim
-:checkhealth herdr-vim-navigator
+:checkhealth vim-herdr-navigator
 ```
 
 Reports the Neovim version, whether you're in a Herdr session, whether `setup()` ran, and whether the helper is found and runnable.
@@ -152,7 +180,7 @@ Reports the Neovim version, whether you're in a Herdr session, whether `setup()`
 ## Help
 
 ```vim
-:help herdr-vim-navigator
+:help vim-herdr-navigator
 ```
 
 ## Entry markers (opt-in)
@@ -162,10 +190,10 @@ When you move from another Herdr pane into a Neovim pane, an entry marker lets t
 Enable it with a single environment variable — export it in your shell rc and restart Herdr:
 
 ```sh
-export HERDR_VIM_NAVIGATOR_ENTRY_MARKERS=1
+export VIM_HERDR_NAVIGATOR_ENTRY_MARKERS=1
 ```
 
-That one switch covers both halves: the helper writes the markers, and this plugin (which inherits Herdr's environment) reads them — there's no separate `setup()` option to keep in sync. The marker is a single-use file under `${XDG_CACHE_HOME:-~/.cache}/herdr-vim-navigator/entry/<pane-id>`; the plugin reads it on focus, jumps to the nearest split, and removes it (markers older than 10s are ignored).
+That one switch covers both halves: the helper writes the markers, and this plugin (which inherits Herdr's environment) reads them — there's no separate `setup()` option to keep in sync. The marker is a single-use file under `${XDG_CACHE_HOME:-~/.cache}/vim-herdr-navigator/entry/<pane-id>`; the plugin reads it on focus, jumps to the nearest split, and removes it (markers older than 10s are ignored).
 
 ## Local development
 
@@ -173,29 +201,32 @@ Point the plugin at a local checkout and at a local helper build. Adjust the pat
 
 ```lua
 {
-  dir = "~/projects/herdr-vim-navigator.nvim", -- local clone of this repo
-  name = "herdr-vim-navigator.nvim",
+  dir = "~/projects/vim-herdr-navigator", -- local clone of this repo
+  name = "vim-herdr-navigator",
   cond = function()
     return vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil
   end,
   lazy = false,
   opts = {
     -- point at the helper's release build during development
-    -- (run `cargo build --release` in the helper repo first)
-    helper = "~/projects/herdr-vim-navigator/target/release/herdr-vim-navigator",
+    -- (run `cargo build --release` at the repo root first)
+    helper = "~/projects/vim-herdr-navigator/target/release/vim-herdr-navigator",
   },
 }
 ```
 
 ## Development
 
-Run the dependency-free smoke test (requires only `nvim` on `PATH`):
+Run the dependency-free Neovim smoke test (requires only `nvim` on `PATH`) and the Rust helper checks:
 
 ```sh
 tests/run.sh
+cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo test --all
 ```
 
-It loads the plugin, exercises `setup()`/commands, and runs `:checkhealth`.
+The smoke test loads the plugin, exercises `setup()`/commands, and runs `:checkhealth`.
 
 ## License
 

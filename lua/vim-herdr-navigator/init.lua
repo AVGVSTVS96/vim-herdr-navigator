@@ -8,7 +8,7 @@ local uv = vim.uv or vim.loop
 local MARKER_STALE_SECONDS = 10
 
 local defaults = {
-  helper = "herdr-vim-navigator",
+  helper = "vim-herdr-navigator",
   set_keymaps = true,
   save_on_switch = 0, -- 0 = never, 1 = :update current buffer, 2 = :wall
   picker_filetype_patterns = {
@@ -46,11 +46,11 @@ local function in_herdr()
 end
 
 -- Entry markers are opt-in and span both halves of the tool: the helper writes
--- them only when $HERDR_VIM_NAVIGATOR_ENTRY_MARKERS is set, and this plugin
+-- them only when $VIM_HERDR_NAVIGATOR_ENTRY_MARKERS is set, and this plugin
 -- reads them only when the same variable is set. One switch, both sides — and
 -- since Neovim inherits Herdr's environment, exporting it once covers both.
 local function entry_markers_enabled()
-  local value = vim.env.HERDR_VIM_NAVIGATOR_ENTRY_MARKERS
+  local value = vim.env.VIM_HERDR_NAVIGATOR_ENTRY_MARKERS
   return value == "1" or value == "true"
 end
 
@@ -65,7 +65,7 @@ local function cache_home()
 end
 
 local function entry_dir()
-  return cache_home() .. "/herdr-vim-navigator/entry"
+  return cache_home() .. "/vim-herdr-navigator/entry"
 end
 
 local function remove_file(path)
@@ -89,7 +89,7 @@ local function notify_once_missing_helper()
   end
   warned_missing_helper = true
   vim.notify(
-    "herdr-vim-navigator.nvim: helper not executable: " .. tostring(config.helper),
+    "vim-herdr-navigator: helper not executable: " .. tostring(config.helper),
     vim.log.levels.WARN
   )
 end
@@ -307,7 +307,7 @@ local function create_commands()
 end
 
 local function create_autocmds()
-  local group = vim.api.nvim_create_augroup("HerdrVimNavigator", { clear = true })
+  local group = vim.api.nvim_create_augroup("VimHerdrNavigator", { clear = true })
 
   if entry_markers_enabled() then
     vim.api.nvim_create_autocmd({ "VimEnter", "FocusGained", "WinEnter" }, {
@@ -349,7 +349,7 @@ function M.is_setup()
 end
 
 -- Return the effective config (defaults merged with any setup() opts). Used by
--- `:checkhealth herdr-vim-navigator`.
+-- `:checkhealth vim-herdr-navigator`.
 function M.get_config()
   return vim.deepcopy(config)
 end

@@ -3,7 +3,7 @@
 use crate::detect::{direction, DIRECTION_NAMES};
 
 /// Canonical command name used in the snippet's header comments.
-pub const HELPER_NAME: &str = "herdr-vim-navigator";
+pub const HELPER_NAME: &str = "vim-herdr-navigator";
 
 fn toml_string(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
@@ -127,7 +127,7 @@ mod tests {
             ("ctrl+l", "right"),
         ] {
             assert!(snippet.contains(&format!("key = \"{key}\"")));
-            assert!(snippet.contains(&format!("herdr-vim-navigator dispatch {name}")));
+            assert!(snippet.contains(&format!("vim-herdr-navigator dispatch {name}")));
         }
         // Arrow bindings are opt-in.
         assert!(!snippet.contains("ctrl+left"));
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn splits_flag_adds_commented_examples() {
         let snippet = render(HELPER_NAME, false, true);
-        assert!(snippet.contains("# command = \"herdr-vim-navigator split right\""));
-        assert!(snippet.contains("# command = \"herdr-vim-navigator split down\""));
+        assert!(snippet.contains("# command = \"vim-herdr-navigator split right\""));
+        assert!(snippet.contains("# command = \"vim-herdr-navigator split down\""));
     }
 }
