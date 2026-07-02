@@ -1,8 +1,8 @@
 [package]
 name = "vim-herdr-navigator"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.74"
+edition = "2024"
+rust-version = "1.85"
 description = "Seamless Herdr + Vim/Neovim pane navigation: the Herdr side of a vim-tmux-navigator-style setup"
 readme = "README.md"
 license = "MIT"

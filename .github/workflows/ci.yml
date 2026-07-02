@@ -9,14 +9,14 @@ jobs:
   installer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Shellcheck install.sh
         run: shellcheck install.sh
 
   rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -31,7 +31,7 @@ jobs:
   neovim-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
@@ -42,7 +42,7 @@ jobs:
   vim-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: rhysd/action-setup-vim@v1
         with:
           version: stable

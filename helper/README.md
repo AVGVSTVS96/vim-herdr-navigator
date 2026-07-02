@@ -30,7 +30,7 @@ This project ports that idea to Herdr using the public `herdr` CLI.
 ## Requirements
 
 - [Herdr](https://herdr.dev/) (provides the `herdr` CLI on your `PATH`)
-- No Rust toolchain needed for prebuilt platforms (macOS arm64/x86_64, Linux arm64/x86_64); `cargo` (1.74+) only for building from source.
+- No Rust toolchain needed for prebuilt platforms (macOS arm64/x86_64, Linux arm64/x86_64); `cargo` (1.85+) only for building from source.
 
 ## Install
 

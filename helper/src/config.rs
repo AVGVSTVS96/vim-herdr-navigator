@@ -1,6 +1,6 @@
 //! Renders a ready-to-paste Herdr keybinding snippet (TOML).
 
-use crate::detect::{direction, DIRECTION_NAMES};
+use crate::detect::{DIRECTION_NAMES, direction};
 
 /// Canonical command name used in the snippet's header comments.
 pub const HELPER_NAME: &str = "vim-herdr-navigator";
@@ -98,6 +98,8 @@ mod tests {
     #[test]
     fn helper_path_is_shell_quoted_and_toml_escaped() {
         let snippet = render("/Applications/My Tools/hv'n");
-        assert!(snippet.contains("command = \"'/Applications/My Tools/hv'\\\\''n' dispatch left\""));
+        assert!(
+            snippet.contains("command = \"'/Applications/My Tools/hv'\\\\''n' dispatch left\"")
+        );
     }
 }

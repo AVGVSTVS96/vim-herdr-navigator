@@ -4,7 +4,7 @@ members = ["cargo:."]
 # Config for 'dist'
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.28.7"
+cargo-dist-version = "0.32.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -18,8 +18,13 @@ install-path = "~/.local/bin"
 # Whether to install an updater program
 install-updater = false
 
-# dist defaults Apple targets to retired Intel macos-13 runners; build both on
-# ARM runners instead (x86_64 cross-compiles with the same Apple toolchain).
+# dist defaults to aging runner labels (retired Intel macos-13, ubuntu-22.04);
+# use evergreen/latest labels so runner retirements can't stall releases.
+# x86_64 mac cross-compiles on ARM with the same Apple toolchain; aarch64
+# linux builds natively on the free ARM runners.
 [dist.github-custom-runners]
-aarch64-apple-darwin = "macos-14"
-x86_64-apple-darwin = "macos-14"
+global = "ubuntu-latest"
+aarch64-apple-darwin = "macos-latest"
+x86_64-apple-darwin = "macos-latest"
+aarch64-unknown-linux-musl = "ubuntu-24.04-arm"
+x86_64-unknown-linux-musl = "ubuntu-latest"
