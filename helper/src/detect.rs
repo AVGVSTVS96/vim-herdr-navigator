@@ -18,8 +18,6 @@ pub struct Direction {
     /// the side we entered from. Moving left enters the target from its right
     /// edge, so select the target's rightmost Vim split (`wincmd l`).
     pub entry_wincmd: &'static str,
-    /// Arrow-key equivalent, used for generated config snippets.
-    pub arrow_key: &'static str,
 }
 
 /// Direction names in the canonical order used for generated config snippets.
@@ -32,25 +30,21 @@ pub fn direction(name: &str) -> Option<Direction> {
             name: "left",
             ctrl_key: "ctrl+h",
             entry_wincmd: "l",
-            arrow_key: "ctrl+left",
         },
         "down" => Direction {
             name: "down",
             ctrl_key: "ctrl+j",
             entry_wincmd: "k",
-            arrow_key: "ctrl+down",
         },
         "up" => Direction {
             name: "up",
             ctrl_key: "ctrl+k",
             entry_wincmd: "j",
-            arrow_key: "ctrl+up",
         },
         "right" => Direction {
             name: "right",
             ctrl_key: "ctrl+l",
             entry_wincmd: "h",
-            arrow_key: "ctrl+right",
         },
         _ => return None,
     })
@@ -94,7 +88,7 @@ fn vim_like_re() -> &'static Regex {
 /// User-supplied extra detection pattern from `$VIM_HERDR_NAVIGATOR_PATTERN`.
 ///
 /// When set, it is OR-ed into the built-in detection (it extends, never narrows,
-/// the set of "Vim-like" commands) — the Herdr counterpart to tmux's
+/// the set of "Vim-like" commands): the Herdr counterpart to tmux's
 /// `@vim_navigator_pattern`. Matched case-insensitively and unanchored, like
 /// tmux's `=~`. An empty or invalid regex is ignored.
 fn user_re() -> Option<&'static Regex> {

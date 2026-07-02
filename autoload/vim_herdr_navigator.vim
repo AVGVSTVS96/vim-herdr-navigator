@@ -7,10 +7,10 @@ let s:defaults = {
       \ 'set_keymaps': 1,
       \ 'save_on_switch': 0,
       \ 'keymaps': {
-      \   'left': ['<C-h>', '<C-Left>'],
-      \   'down': ['<C-j>', '<C-Down>'],
-      \   'up': ['<C-k>', '<C-Up>'],
-      \   'right': ['<C-l>', '<C-Right>'],
+      \   'left': ['<C-h>'],
+      \   'down': ['<C-j>'],
+      \   'up': ['<C-k>'],
+      \   'right': ['<C-l>'],
       \ },
       \ }
 

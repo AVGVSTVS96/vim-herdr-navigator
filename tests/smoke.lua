@@ -28,6 +28,13 @@ if not ok then
   vim.cmd("cq")
 end
 
+-- 1b. Auto-setup is scheduled on load, but skips entirely outside a Herdr
+-- session (env is unset above): no module setup, no claimed keys, no autocmds.
+vim.wait(50, function()
+  return false
+end)
+check("auto-setup skipped outside Herdr", nav.is_setup() == false)
+
 -- 2. setup() merges options over defaults.
 nav.setup({ save_on_switch = 2, helper = "custom-helper-name" })
 local cfg = nav.get_config()
@@ -59,9 +66,9 @@ end
 check("global <C-h> is our map", is_ours(maparg_dict("<C-h>"), "left"))
 
 -- 5c. The VeryLazy reapply wins over LazyVim's window maps (it owns the key).
-vim.keymap.set("n", "<C-Up>", "<C-w>k", { desc = "Go to Upper Window", remap = true })
+vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Go to Upper Window", remap = true })
 vim.cmd("doautocmd User VeryLazy")
-check("reapply reclaims <C-Up> over a window map", is_ours(maparg_dict("<C-Up>"), "up"))
+check("reapply reclaims <C-k> over a window map", is_ours(maparg_dict("<C-k>"), "up"))
 
 -- 5d. Picker buffers: the plugin reasserts its maps buffer-locally so it owns
 -- the keys there too.

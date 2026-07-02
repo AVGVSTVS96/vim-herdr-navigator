@@ -41,7 +41,14 @@ endfunction
 runtime plugin/vim-herdr-navigator.vim
 
 call s:check('plugin loaded', exists('g:loaded_vim_herdr_navigator') && g:loaded_vim_herdr_navigator == 1)
-call s:check('auto setup ran', vim_herdr_navigator#is_setup())
+call s:check('auto setup skipped outside Herdr', !vim_herdr_navigator#is_setup())
+
+" Sourced inside a Herdr session, auto-setup runs.
+let $HERDR_ENV = '1'
+unlet g:loaded_vim_herdr_navigator
+runtime plugin/vim-herdr-navigator.vim
+call s:check('auto setup ran inside Herdr', vim_herdr_navigator#is_setup())
+let $HERDR_ENV = ''
 
 call vim_herdr_navigator#setup({'save_on_switch': 2, 'helper': 'custom-helper-name'})
 let s:cfg = vim_herdr_navigator#get_config()

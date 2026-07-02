@@ -143,25 +143,6 @@ pub fn current_pane_id() -> Result<String> {
         .ok_or_else(|| anyhow!("could not determine current Herdr pane id"))
 }
 
-/// Best-effort working directory for a pane, used to inherit cwd on split.
-pub fn pane_cwd(pane_id: &str) -> Option<String> {
-    for var in ["HERDR_ACTIVE_PANE_CWD", "HERDR_PANE_CWD"] {
-        if let Some(value) = non_empty_env(var) {
-            return Some(value);
-        }
-    }
-
-    if let Ok(result) = call(&["pane", "get", pane_id]) {
-        for key in ["foreground_cwd", "cwd"] {
-            if let Some(value) = str_at(&result, &["pane", key]) {
-                return Some(value.to_string());
-            }
-        }
-    }
-
-    non_empty_env("PWD")
-}
-
 /// True when the pane is running a Vim-like foreground process.
 pub fn is_vim_like_pane(pane_id: &str) -> Result<bool> {
     let result = call(&["pane", "process-info", "--pane", pane_id])?;
@@ -202,24 +183,6 @@ pub fn focus(pane_id: &str, direction: &str) -> Result<()> {
 /// it unconditionally before a directional move.
 pub fn unzoom(pane_id: &str) -> Result<()> {
     call(&["pane", "zoom", "--pane", pane_id, "--off"]).map(drop)
-}
-
-/// Split a pane right or down, inheriting `cwd` when known, and focus the split.
-pub fn split(pane_id: &str, direction: &str, cwd: Option<&str>) -> Result<()> {
-    let mut args = vec![
-        "pane",
-        "split",
-        "--pane",
-        pane_id,
-        "--direction",
-        direction,
-        "--focus",
-    ];
-    if let Some(cwd) = cwd {
-        args.push("--cwd");
-        args.push(cwd);
-    }
-    call(&args).map(drop)
 }
 
 /// Run `herdr --version` and return its first line, if available.

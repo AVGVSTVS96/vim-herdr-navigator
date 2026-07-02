@@ -23,10 +23,10 @@ local defaults = {
     "^oil$",
   },
   keymaps = {
-    left = { "<C-h>", "<C-Left>" },
-    down = { "<C-j>", "<C-Down>" },
-    up = { "<C-k>", "<C-Up>" },
-    right = { "<C-l>", "<C-Right>" },
+    left = { "<C-h>" },
+    down = { "<C-j>" },
+    up = { "<C-k>" },
+    right = { "<C-l>" },
   },
 }
 
@@ -47,7 +47,7 @@ end
 
 -- Entry markers are opt-in and span both halves of the tool: the helper writes
 -- them only when $VIM_HERDR_NAVIGATOR_ENTRY_MARKERS is set, and this plugin
--- reads them only when the same variable is set. One switch, both sides — and
+-- reads them only when the same variable is set. One switch, both sides; and
 -- since Neovim inherits Herdr's environment, exporting it once covers both.
 local function entry_markers_enabled()
   local value = vim.env.VIM_HERDR_NAVIGATOR_ENTRY_MARKERS
@@ -150,10 +150,9 @@ end
 -- Keymaps
 --
 -- Like vim-tmux-navigator, enabling the plugin's maps (`set_keymaps = true`,
--- the default) means it owns <C-h/j/k/l> (and <C-Arrow>): they are installed on
--- setup and reasserted after LazyVim's window maps. To keep your own mapping on
--- one of these keys, set `set_keymaps = false` and use the :HerdrNavigate*
--- commands.
+-- the default) means it owns <C-h/j/k/l>: they are installed on setup and
+-- reasserted after LazyVim's window maps. To keep your own mapping on one of
+-- these keys, set `set_keymaps = false` and use the :HerdrNavigate* commands.
 -- --------------------------------------------------------------------------- --
 
 local function set_normal_map(lhs, direction, buffer)

@@ -23,8 +23,8 @@ The repo contains both the editor plugin and the Herdr-side helper,
 `vim-herdr-navigator`:
 https://github.com/AVGVSTVS96/vim-herdr-navigator
 
-A single set of <C-h/j/k/l> (and optionally <C-Arrow>) keys moves between
-editor windows and Herdr panes as if they were one grid.
+A single set of <C-h/j/k/l> keys moves between editor windows and Herdr panes
+as if they were one grid.
 
 ==============================================================================
 2. REQUIREMENTS                               *vim-herdr-navigator-requirements*
@@ -69,7 +69,7 @@ set); elsewhere it stays inert.
 
 Inside Vim/Neovim:
 
-1. <C-h/j/k/l> or <C-Arrow> first tries normal window navigation with
+1. <C-h/j/k/l> first tries normal window navigation with
    `wincmd h/j/k/l`.
 2. If the current window did not change (an edge), the plugin calls: >sh
 
@@ -84,13 +84,13 @@ From a non-editor Herdr pane, Herdr keybindings call: >sh
 which decides whether to move Herdr focus or send <C-h/j/k/l> into Vim/Neovim.
 
 The Neovim adapter additionally handles floating pickers/explorers (Snacks,
-Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, oil), which often bounce
-`wincmd h` back inside Neovim. For those, left navigation from a focused picker
+Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, netrw, oil), which
+often bounce `wincmd h` back inside Neovim. For those, left navigation from a focused picker
 float goes straight to Herdr. The list is configurable via
 `picker_filetype_patterns`.
 
 Pickers install their own buffer-local <C-h/j/k/l>, so the Neovim adapter
-reasserts its maps buffer-locally in those buffers too — it owns these keys
+reasserts its maps buffer-locally in those buffers too; it owns these keys
 there as well. Narrow `picker_filetype_patterns` or change `keymaps` if a picker
 needs to keep one of them. In `fzf`/`fzf-lua` terminal buffers the terminal-mode
 mappings pass the key through to the picker instead of navigating.
@@ -116,10 +116,10 @@ Neovim defaults: >lua
         "^oil$",
       },
       keymaps = {
-        left = { "<C-h>", "<C-Left>" },
-        down = { "<C-j>", "<C-Down>" },
-        up = { "<C-k>", "<C-Up>" },
-        right = { "<C-l>", "<C-Right>" },
+        left = { "<C-h>" },
+        down = { "<C-j>" },
+        up = { "<C-k>" },
+        right = { "<C-l>" },
       },
     })
 <
@@ -128,7 +128,7 @@ helper                                              *vim-herdr-navigator-helper*
     PATH. `~` is expanded.
 
 set_keymaps                                    *vim-herdr-navigator-set_keymaps*
-    When true (default), the plugin owns <C-h/j/k/l> (and <C-Arrow>): the maps
+    When true (default), the plugin owns <C-h/j/k/l>: the maps
     are installed on setup() and reasserted after LazyVim's `User VeryLazy`
     window maps so they stay edge-aware. To keep your own mapping on one of these
     keys, set this to false and use the |vim-herdr-navigator-commands|.
@@ -145,13 +145,15 @@ Entry markers                                *vim-herdr-navigator-entry_markers*
         export VIM_HERDR_NAVIGATOR_ENTRY_MARKERS=1
 <
     The helper writes the markers and this plugin (which inherits Herdr's
-    environment) reads them — one switch covers both halves.
+    environment) reads them; one switch covers both halves.
 
 picker_filetype_patterns        *vim-herdr-navigator-picker_filetype_patterns*
     Lua patterns matched against `&filetype` to detect floating pickers.
 
 keymaps                                            *vim-herdr-navigator-keymaps*
     Per-direction lists of left-hand-side keys to map (normal + terminal mode).
+    Add extra keys per direction, e.g. `left = { "<C-h>", "<A-Left>" }`, and
+    mirror them on the Herdr side (see |vim-herdr-navigator-herdr-config|).
 
 Classic Vim uses the same option names as globals, for example: >vim
 
@@ -179,10 +181,10 @@ Use these directly if you set `set_keymaps = false` and want custom mappings.
 
 The helper must be wired into Herdr's keybindings. Generate a snippet with: >sh
 
-    vim-herdr-navigator config            # ctrl+h/j/k/l
-    vim-herdr-navigator config --arrows   # also ctrl+arrow keys
+    vim-herdr-navigator config
 <
-Paste the output into your Herdr config. Example block: >toml
+Paste the output into your Herdr config (~/.config/herdr/config.toml), then
+restart Herdr or run `herdr server reload-config`. Example block: >toml
 
     [[keys.command]]
     key = "ctrl+h"

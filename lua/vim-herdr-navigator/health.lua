@@ -11,7 +11,7 @@ local h = {
   info = health.info or health.report_info,
 }
 
-local function herdr_version(helper)
+local function helper_version(helper)
   if not (vim.system and helper) then
     return nil
   end
@@ -34,14 +34,14 @@ function M.check()
   if vim.fn.has("nvim-0.8") == 1 then
     h.ok("Neovim " .. vstr)
   else
-    h.warn("Neovim " .. vstr .. " — 0.8+ recommended")
+    h.warn("Neovim " .. vstr .. "; 0.8+ recommended")
   end
 
   -- Herdr session
   if vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil then
     h.ok("Running inside a Herdr session")
   else
-    h.info("Not inside a Herdr session — the plugin stays inert until HERDR_ENV=1 (this is fine outside Herdr)")
+    h.info("Not inside a Herdr session: the plugin stays inert until HERDR_ENV=1 (this is fine outside Herdr)")
   end
 
   local ok, nav = pcall(require, "vim-herdr-navigator")
@@ -62,7 +62,7 @@ function M.check()
   -- Helper executable
   local helper = nav.resolve_helper()
   if helper then
-    local version = herdr_version(helper)
+    local version = helper_version(helper)
     if version and version ~= "" then
       h.ok("Helper found: " .. helper .. " (" .. version .. ")")
     else

@@ -1,4 +1,4 @@
-//! `doctor` / `check`: environment diagnostics.
+//! `doctor`: environment diagnostics.
 
 use std::path::PathBuf;
 
@@ -89,7 +89,7 @@ pub fn run() -> i32 {
         }
         None => checks.push((
             Status::Fail,
-            "herdr not found on PATH — install Herdr and ensure `herdr` is runnable".to_string(),
+            "herdr not found on PATH; install Herdr and ensure `herdr` is runnable".to_string(),
         )),
     }
 

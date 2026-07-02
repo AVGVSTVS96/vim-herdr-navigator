@@ -1,11 +1,10 @@
-//! Seamless Herdr + Vim/Neovim pane navigation — the Herdr side of a
+//! Seamless Herdr + Vim/Neovim pane navigation: the Herdr side of a
 //! vim-tmux-navigator-style setup.
 //!
 //! - From Herdr keybindings, `dispatch <direction>` decides whether to send the
 //!   Ctrl-h/j/k/l key into Vim/Neovim/FZF or move Herdr focus.
 //! - From Vim/Neovim, `focus <direction>` is called when editor window
 //!   navigation hits an edge, so focus moves to the neighboring Herdr pane.
-//! - `split <right|down>` mirrors a couple of tmux split bindings.
 
 mod config;
 mod detect;
@@ -15,12 +14,11 @@ mod marker;
 
 use std::process::ExitCode;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand, ValueEnum};
 
+use config::HELPER_NAME;
 use detect::Direction;
-
-const HELPER_NAME: &str = "vim-herdr-navigator";
 
 #[derive(Parser)]
 #[command(
@@ -41,35 +39,13 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Herdr keybinding entrypoint: send key into Vim or move Herdr focus.
-    Dispatch {
-        direction: DirArg,
-        /// Source pane id; defaults to Herdr env/current pane.
-        #[arg(long = "pane")]
-        pane_id: Option<String>,
-    },
+    Dispatch { direction: DirArg },
     /// Move Herdr focus toward a neighboring pane (called by Vim/Neovim at an edge).
-    Focus {
-        direction: DirArg,
-        #[arg(long = "pane")]
-        pane_id: Option<String>,
-    },
-    /// Split the current pane right or down.
-    Split {
-        direction: DirArg,
-        #[arg(long = "pane")]
-        pane_id: Option<String>,
-    },
+    Focus { direction: DirArg },
     /// Run environment diagnostics.
-    #[command(visible_alias = "check")]
     Doctor,
     /// Print a Herdr keybinding snippet (TOML) to paste into your config.
     Config {
-        /// Also emit ctrl+arrow bindings.
-        #[arg(long)]
-        arrows: bool,
-        /// Also emit commented split-binding examples.
-        #[arg(long)]
-        splits: bool,
         /// Command name to use in the snippet.
         #[arg(long, default_value = HELPER_NAME)]
         helper: String,
@@ -121,13 +97,6 @@ fn unzoom_on_move() -> bool {
     std::env::var("VIM_HERDR_NAVIGATOR_ZOOM").ok().as_deref() == Some("unzoom")
 }
 
-fn resolve_pane(pane_id: Option<String>) -> Result<String> {
-    match pane_id {
-        Some(id) if !id.is_empty() => Ok(id),
-        _ => herdr::current_pane_id(),
-    }
-}
-
 /// Prepare an entry marker if the neighbor in this direction is a Vim-like pane.
 fn prepare_entry_marker(source: &str, dir: &Direction, debug_enabled: bool) -> Result<()> {
     if !entry_markers_enabled() {
@@ -171,17 +140,13 @@ fn run(cli: Cli) -> Result<()> {
     let debug_enabled = cli.debug;
 
     match cli.command {
-        Command::Config {
-            arrows,
-            splits,
-            helper,
-        } => {
-            print!("{}", config::render(&helper, arrows, splits));
+        Command::Config { helper } => {
+            print!("{}", config::render(&helper));
             Ok(())
         }
         Command::Doctor => unreachable!("doctor handled before run()"),
-        Command::Dispatch { direction, pane_id } => {
-            let pane = resolve_pane(pane_id)?;
+        Command::Dispatch { direction } => {
+            let pane = herdr::current_pane_id()?;
             let dir = detect::direction(direction.as_str()).expect("valid direction");
             if herdr::is_vim_like_pane(&pane)? {
                 debug(
@@ -197,19 +162,10 @@ fn run(cli: Cli) -> Result<()> {
                 focus_pane(&pane, &dir, debug_enabled)
             }
         }
-        Command::Focus { direction, pane_id } => {
-            let pane = resolve_pane(pane_id)?;
+        Command::Focus { direction } => {
+            let pane = herdr::current_pane_id()?;
             let dir = detect::direction(direction.as_str()).expect("valid direction");
             focus_pane(&pane, &dir, debug_enabled)
-        }
-        Command::Split { direction, pane_id } => {
-            let name = direction.as_str();
-            if name != "right" && name != "down" {
-                bail!("split only supports right or down");
-            }
-            let pane = resolve_pane(pane_id)?;
-            let cwd = herdr::pane_cwd(&pane);
-            herdr::split(&pane, name, cwd.as_deref())
         }
     }
 }

@@ -1,23 +1,34 @@
 # vim-herdr-navigator
 
-Seamless [Herdr](https://herdr.dev/) + Vim/Neovim pane navigation — a port of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator)'s core `h/j/k/l` navigation to Herdr.
+[![CI](https://github.com/AVGVSTVS96/vim-herdr-navigator/actions/workflows/ci.yml/badge.svg)](https://github.com/AVGVSTVS96/vim-herdr-navigator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This monorepo contains both halves needed today:
+Seamlessly navigate between [Herdr](https://herdr.dev/) panes and Vim/Neovim splits; a reimplementation of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator) in Herdr.
 
-- the Vim/Neovim runtime plugin at the repo root (`plugin/`, `autoload/`, `lua/`, `doc/`)
-- the Herdr-side Rust helper in `helper/`
+`Ctrl-h/j/k/l` move across Vim/Neovim splits and Herdr panes as if they were one grid: editor windows get first chance, and Herdr takes over when the cursor hits an edge.
 
-A single set of `Ctrl-h/j/k/l` (and optionally `Ctrl-Arrow`) keys moves between Vim/Neovim splits and Herdr panes as if they were one grid: editor windows get first chance, and Herdr takes focus when the editor hits an edge.
+<!-- TODO: demo gif of cross-pane navigation -->
+
+It ships as two halves, both in this repo:
+
+- **Vim/Neovim plugin** at the repo root (`plugin/`, `autoload/`, `lua/`, `doc/`), native Lua and classic Vimscript adapters.
+- **Herdr-side helper** in [`helper/`](helper/), a small Rust binary (`vim-herdr-navigator`) driven from Herdr keybindings.
 
 ## Requirements
 
 - Vim 8.2+ or Neovim 0.8+ (Neovim 0.10+ recommended)
 - [Herdr](https://herdr.dev/)
-- The [`vim-herdr-navigator`](https://github.com/AVGVSTVS96/vim-herdr-navigator) helper (a small Rust binary) installed and on your `PATH`
+- Cargo
 
 ## Install
 
-### Helper binary
+Setup is three steps, in order:
+
+1. Install the **helper binary** so `vim-herdr-navigator` is on your `PATH`.
+2. Install the **Vim/Neovim plugin** with your plugin manager.
+3. Add the **Herdr keybindings** that drive the helper.
+
+### 1. Helper binary
 
 Install the Rust helper first so `vim-herdr-navigator` is on your `PATH`:
 
@@ -41,17 +52,13 @@ vim-herdr-navigator --version
 vim-herdr-navigator doctor
 ```
 
-### Vim/Neovim plugin
+### 2. Vim/Neovim plugin
 
 #### lazy.nvim
 
 ```lua
 {
   "AVGVSTVS96/vim-herdr-navigator",
-  -- Only load inside a Herdr session.
-  cond = function()
-    return vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil
-  end,
   lazy = false,
   opts = {},
 }
@@ -77,13 +84,51 @@ Plug 'AVGVSTVS96/vim-herdr-navigator'
 
 Classic Vim is configured with `g:vim_herdr_navigator_*` variables; Neovim can use `require("vim-herdr-navigator").setup({ ... })`. Both auto-setup on load by default.
 
-Then wire up the Herdr side — see [Herdr config](#herdr-config).
+### 3. Herdr keybindings
+
+Finally, bind the keys in Herdr so it can hand them to the helper.
+Set the following keybindings in your Herdr config (`~/.config/herdr/config.toml`):
+
+```toml
+[[keys.command]]
+key = "ctrl+h"
+type = "shell"
+command = "vim-herdr-navigator dispatch left"
+description = "vim-aware pane left"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "shell"
+command = "vim-herdr-navigator dispatch down"
+description = "vim-aware pane down"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "shell"
+command = "vim-herdr-navigator dispatch up"
+description = "vim-aware pane up"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "shell"
+command = "vim-herdr-navigator dispatch right"
+description = "vim-aware pane right"
+```
+
+Alternatively, the config command generates a ready-to-paste snippet for your convenience:
+```sh
+vim-herdr-navigator config | pbcopy
+```
+
+Paste the output into your Herdr config, then restart or reload config in Herdr.
+
+Check installation with `vim-herdr-navigator doctor` in your shell, `:checkhealth vim-herdr-navigator` in vim, and `:help vim-herdr-navigator` for the full reference, then see [Behavior](#behavior) and [Options](#options) to customize.
 
 ## Behavior
 
 Inside Vim/Neovim:
 
-1. `Ctrl-h/j/k/l` or `Ctrl-Arrow` first tries normal Vim window navigation with `wincmd h/j/k/l`.
+1. `Ctrl-h/j/k/l` first tries normal Vim window navigation with `wincmd h/j/k/l`.
 2. If the current editor window did not change (an edge), the plugin calls `vim-herdr-navigator focus <direction>`.
 3. The helper focuses the neighboring Herdr pane.
 
@@ -95,22 +140,24 @@ The plugin only acts inside a Herdr session (`HERDR_ENV=1` or `HERDR_SOCKET_PATH
 
 ### Keymaps and LazyVim
 
-Like `vim-tmux-navigator`, enabling the plugin's maps (`set_keymaps = true`, the default) means it owns `<C-h/j/k/l>` (and `<C-Arrow>`): they are installed when `setup()` runs and reasserted after LazyVim installs its own `<C-h/j/k/l>` window maps on `User VeryLazy`, so navigation stays edge-aware without you editing your personal keymaps. To keep your own mapping on one of these keys, set `set_keymaps = false` and wire them up yourself via the [commands](#commands).
+By default (`set_keymaps = true`) the plugin owns `<C-h/j/k/l>`. It reasserts them after LazyVim installs its own window maps on `User VeryLazy`. To use your own mappings, set `set_keymaps = false` and map the [commands](#commands) yourself.
 
 ### Pickers and explorers
 
-In Neovim, known floating pickers/explorers get extra handling: left navigation from a focused picker float goes straight to Herdr instead of bouncing focus back inside Neovim. Which filetypes count is configurable via `picker_filetype_patterns`; defaults cover Snacks picker/explorer, Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, and oil.
+In Neovim, known floating pickers/explorers get extra handling: left navigation from a focused picker float goes straight to Herdr instead of bouncing focus back inside Neovim. Which filetypes count is configurable via `picker_filetype_patterns`; defaults cover Snacks picker/explorer, Telescope, mini.pick, fzf/fzf-lua, neo-tree, NvimTree, netrw, and oil.
 
-Pickers install their own buffer-local `<C-h/j/k/l>`, so the Neovim adapter reasserts its maps buffer-locally in those buffers too — it owns these keys there as well. If you need a picker to keep one of them, narrow `picker_filetype_patterns` or change `keymaps`. In `fzf`/`fzf-lua` terminal buffers the terminal-mode mapping passes the key through to the picker.
+Pickers install their own buffer-local `<C-h/j/k/l>`, so the Neovim adapter reasserts its maps buffer-locally in those buffers too; it owns these keys there as well. If you need a picker to keep one of them, narrow `picker_filetype_patterns` or change `keymaps`. In `fzf`/`fzf-lua` terminal buffers the terminal-mode mapping passes the key through to the picker.
 
 ## Default keymaps
 
 Normal and terminal mode:
 
-- `<C-h>` / `<C-Left>`: left
-- `<C-j>` / `<C-Down>`: down
-- `<C-k>` / `<C-Up>`: up
-- `<C-l>` / `<C-Right>`: right
+- `<C-h>`: left
+- `<C-j>`: down
+- `<C-k>`: up
+- `<C-l>`: right
+
+Add or change keys via the `keymaps` option, e.g. `left = { "<C-h>", "<A-Left>" }`, and mirror any additions with matching `[[keys.command]]` blocks in the Herdr config so both halves agree.
 
 ## Commands
 
@@ -141,11 +188,11 @@ require("vim-herdr-navigator").setup({
     "^netrw$",
     "^oil$",
   },
-  keymaps = {
-    left = { "<C-h>", "<C-Left>" },
-    down = { "<C-j>", "<C-Down>" },
-    up = { "<C-k>", "<C-Up>" },
-    right = { "<C-l>", "<C-Right>" },
+  keymaps = {                     -- keys per direction; add your own, e.g. { "<C-h>", "<A-Left>" }
+    left = { "<C-h>" },
+    down = { "<C-j>" },
+    up = { "<C-k>" },
+    right = { "<C-l>" },
   },
 })
 ```
@@ -165,52 +212,36 @@ let g:vim_herdr_navigator_save_on_switch = 0
 let g:vim_herdr_navigator_auto_setup = 1
 ```
 
-## Herdr config
+## Environment variables
 
-The helper must be bound in Herdr's keybindings. Generate a ready-to-paste snippet with the helper:
+The helper reads a few optional variables. Set them in your shell rc (e.g. `~/.zshrc`) so the Herdr-spawned keybinding process inherits them, then restart Herdr.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `VIM_HERDR_NAVIGATOR_PATTERN` | _(unset)_ | Extra regex OR-ed into the built-in Vim-like detection: the Herdr counterpart to tmux's `@vim_navigator_pattern`. Extends, never narrows, the set; case-insensitive, unanchored. |
+| `VIM_HERDR_NAVIGATOR_ZOOM` | `preserve` | `unzoom` un-maximizes the pane you move out of before focusing; `preserve` keeps Herdr's native zoom. |
+| `VIM_HERDR_NAVIGATOR_ENTRY_MARKERS` | _(off)_ | Set to `1` to land on the split nearest the entered edge. See [Entry markers](#entry-markers-opt-in). |
 
 ```sh
-vim-herdr-navigator config            # ctrl+h/j/k/l
-vim-herdr-navigator config --arrows   # also ctrl+arrow keys
+# Also keep nav keys inside ssh (treat it as "Vim-like"):
+export VIM_HERDR_NAVIGATOR_PATTERN='(view|l?n?vim?x?|fzf|ssh)'
 ```
 
-It prints one block per direction, e.g.:
-
-```toml
-[[keys.command]]
-key = "ctrl+h"
-type = "shell"
-command = "vim-herdr-navigator dispatch left"
-description = "vim-aware pane left"
-```
-
-## Health
-
-```vim
-:checkhealth vim-herdr-navigator
-```
-
-Reports the Neovim version, whether you're in a Herdr session, whether `setup()` ran, and whether the helper is found and runnable. `:checkhealth` is Neovim-only; Vim support is covered by the smoke test.
-
-## Help
-
-```vim
-:help vim-herdr-navigator
-```
+See [`helper/README.md`](helper/README.md#configuration) for the full reference and design notes.
 
 ## Entry markers (opt-in)
 
 When you move from another Herdr pane into a Vim/Neovim pane, an entry marker lets the plugin land you on the split nearest the edge you entered from, instead of wherever the cursor last was. It's **off by default**.
 
-Enable it with a single environment variable — export it in your shell rc and restart Herdr:
+Enable it with a single environment variable; export it in your shell rc and restart Herdr:
 
 ```sh
 export VIM_HERDR_NAVIGATOR_ENTRY_MARKERS=1
 ```
 
-That one switch covers both halves: the helper writes the markers, and this plugin (which inherits Herdr's environment) reads them — there's no separate `setup()` option to keep in sync. The marker is a single-use file under `${XDG_CACHE_HOME:-~/.cache}/vim-herdr-navigator/entry/<pane-id>`; the plugin reads it on focus, jumps to the nearest split, and removes it (markers older than 10s are ignored).
+That one switch covers both halves: the helper writes the markers, and this plugin (which inherits Herdr's environment) reads them; there's no separate `setup()` option to keep in sync.
 
-## Local development
+## Development
 
 Point the plugin at a local checkout and at a local helper build. Adjust the paths to wherever you cloned the repos:
 
@@ -218,9 +249,6 @@ Point the plugin at a local checkout and at a local helper build. Adjust the pat
 {
   dir = "~/projects/vim-herdr-navigator", -- local clone of this repo
   name = "vim-herdr-navigator",
-  cond = function()
-    return vim.env.HERDR_ENV == "1" or vim.env.HERDR_SOCKET_PATH ~= nil
-  end,
   lazy = false,
   opts = {
     -- point at the helper's release build during development
@@ -229,8 +257,6 @@ Point the plugin at a local checkout and at a local helper build. Adjust the pat
   },
 }
 ```
-
-## Development
 
 Run the dependency-free editor smoke tests and the Rust helper checks:
 
@@ -243,6 +269,18 @@ cargo test --all
 ```
 
 The smoke tests load the plugin and exercise `setup()`/commands/navigation. The Neovim smoke test also runs `:checkhealth`.
+
+## Limitations
+
+- **`C-\` (previous-pane toggle)** is not ported; Herdr does not yet expose last-pane to the CLI.
+- **Copy mode:** navigation keys are unavailable while a pane is in Herdr's copy mode. Exit copy mode to navigate.
+- **No edge wrapping:** at the outer edge of the grid a directional key is a no-op, matching typical multiplexer behavior.
+
+See [`helper/README.md`](helper/README.md#not-yet-ported--limitations) for details.
+
+## Credits
+
+A reimplementation of [`christoomey/vim-tmux-navigator`](https://github.com/christoomey/vim-tmux-navigator) in [Herdr](https://herdr.dev/). Thanks to Chris Toomey, and Mislav Marohnic for their work on the original plugin.
 
 ## License
 
