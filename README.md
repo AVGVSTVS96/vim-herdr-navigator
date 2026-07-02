@@ -18,41 +18,19 @@ It ships as two halves, both in this repo:
 
 - Vim 8.2+ or Neovim 0.8+ (Neovim 0.10+ recommended)
 - [Herdr](https://herdr.dev/)
-- Cargo
+
+No Rust toolchain needed: the installer downloads a prebuilt helper binary and only falls back to `cargo build` on platforms without one (macOS arm64/x86_64 and Linux arm64/x86_64 are prebuilt).
 
 ## Install
 
-Setup is three steps, in order:
+Setup is two steps:
 
-1. Install the **helper binary** so `vim-herdr-navigator` is on your `PATH`.
-2. Install the **Vim/Neovim plugin** with your plugin manager.
-3. Add the **Herdr keybindings** that drive the helper.
+1. Install the **Vim/Neovim plugin**; its build hook installs the helper binary too.
+2. Add the **Herdr keybindings** that drive the helper.
 
-### 1. Helper binary
+### 1. Vim/Neovim plugin (+ helper)
 
-Install the Rust helper first so `vim-herdr-navigator` is on your `PATH`:
-
-```sh
-cargo install --git https://github.com/AVGVSTVS96/vim-herdr-navigator --package vim-herdr-navigator
-```
-
-For local development from a clone:
-
-```sh
-git clone https://github.com/AVGVSTVS96/vim-herdr-navigator
-cd vim-herdr-navigator
-cargo build --release
-ln -sf "$PWD/target/release/vim-herdr-navigator" ~/.local/bin/vim-herdr-navigator
-```
-
-Verify:
-
-```sh
-vim-herdr-navigator --version
-vim-herdr-navigator doctor
-```
-
-### 2. Vim/Neovim plugin
+The `install.sh` build hook downloads the helper release matching the plugin checkout (so the two never drift apart), places it in the plugin's `bin/`, and copies it into `~/.local/bin` so Herdr finds it on `PATH`. It re-runs on every plugin update, keeping the helper in lockstep.
 
 #### lazy.nvim
 
@@ -60,16 +38,19 @@ vim-herdr-navigator doctor
 {
   "AVGVSTVS96/vim-herdr-navigator",
   lazy = false,
+  build = "./install.sh",
   opts = {},
 }
 ```
 
-Zero config: `opts = {}` uses the defaults, and the helper is found on `PATH` as `vim-herdr-navigator`. See [Options](#options) to customize.
+Zero config: `opts = {}` uses the defaults, and the plugin finds the hook-installed helper automatically. See [Options](#options) to customize.
 
 #### vim.pack (Neovim 0.12+)
 
 ```lua
 vim.pack.add({ "https://github.com/AVGVSTVS96/vim-herdr-navigator" })
+-- run the helper installer once after the plugin is downloaded:
+--   :!cd <plugin dir> && ./install.sh
 -- setup() is auto-called on load; call it explicitly only to pass options:
 -- require("vim-herdr-navigator").setup({})
 ```
@@ -79,12 +60,36 @@ vim.pack.add({ "https://github.com/AVGVSTVS96/vim-herdr-navigator" })
 Any Vim plugin manager that adds the repo root to `runtimepath` works, for example vim-plug:
 
 ```vim
-Plug 'AVGVSTVS96/vim-herdr-navigator'
+Plug 'AVGVSTVS96/vim-herdr-navigator', { 'do': './install.sh' }
 ```
 
 Classic Vim is configured with `g:vim_herdr_navigator_*` variables; Neovim can use `require("vim-herdr-navigator").setup({ ... })`. Both auto-setup on load by default.
 
-### 3. Herdr keybindings
+#### Other ways to install the helper
+
+If you'd rather manage the helper binary yourself, skip the build hook and use any of these; the plugin falls back to `vim-herdr-navigator` on `PATH`:
+
+```sh
+# shell installer (prebuilt binary, no Rust needed) -> ~/.local/bin
+curl -LsSf https://github.com/AVGVSTVS96/vim-herdr-navigator/releases/latest/download/vim-herdr-navigator-installer.sh | sh
+
+# cargo-binstall (prebuilt binary via cargo)
+cargo binstall --git https://github.com/AVGVSTVS96/vim-herdr-navigator vim-herdr-navigator
+
+# build from source with cargo
+cargo install --git https://github.com/AVGVSTVS96/vim-herdr-navigator --package vim-herdr-navigator
+```
+
+Verify with:
+
+```sh
+vim-herdr-navigator --version
+vim-herdr-navigator doctor
+```
+
+`install.sh` knobs: `VIM_HERDR_NAVIGATOR_NO_LOCAL_BIN=1` skips the `~/.local/bin` copy (point your Herdr keybindings at `<plugin dir>/bin/vim-herdr-navigator` instead), and `VIM_HERDR_NAVIGATOR_FORCE_BUILD=1` always builds from source.
+
+### 2. Herdr keybindings
 
 Finally, bind the keys in Herdr so it can hand them to the helper.
 Set the following keybindings in your Herdr config (`~/.config/herdr/config.toml`):
@@ -174,7 +179,8 @@ Neovim defaults shown:
 
 ```lua
 require("vim-herdr-navigator").setup({
-  helper = "vim-herdr-navigator", -- name or path of the helper command (~ is expanded)
+  helper = "vim-herdr-navigator", -- name or path of the helper command (~ is expanded); at this
+                                  -- default the hook-installed <plugin>/bin binary is preferred over PATH
   set_keymaps = true,             -- false: manage keys yourself via :HerdrNavigate* commands
   save_on_switch = 0,             -- 0 never, 1 :update, 2 :wall (save before leaving Neovim)
   picker_filetype_patterns = {    -- filetypes treated as floating pickers

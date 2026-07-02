@@ -1,0 +1,8 @@
+# https://release-plz.dev/docs/config
+[workspace]
+# Not published to crates.io; releases are git tags + dist-built binaries.
+publish = false
+# dist's release.yml creates the GitHub Release; release-plz only tags.
+git_release_enable = false
+# Match the tag format dist's release workflow triggers on.
+git_tag_name = "v{{ version }}"

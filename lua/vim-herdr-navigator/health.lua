@@ -71,7 +71,10 @@ function M.check()
   else
     h.error(
       "Helper not executable: " .. tostring(config.helper),
-      { "Install vim-herdr-navigator and ensure it is on PATH, or set opts.helper to its path." }
+      {
+        "Run ./install.sh in the plugin directory (or add it as your plugin manager's build hook).",
+        "Alternatively install vim-herdr-navigator on PATH, or set opts.helper to its path.",
+      }
     )
   end
 

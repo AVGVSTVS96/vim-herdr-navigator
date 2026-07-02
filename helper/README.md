@@ -30,11 +30,30 @@ This project ports that idea to Herdr using the public `herdr` CLI.
 ## Requirements
 
 - [Herdr](https://herdr.dev/) (provides the `herdr` CLI on your `PATH`)
-- A Rust toolchain (`cargo`, 1.74+) to install; the helper is currently built from source.
+- No Rust toolchain needed for prebuilt platforms (macOS arm64/x86_64, Linux arm64/x86_64); `cargo` (1.74+) only for building from source.
 
 ## Install
 
 All options put a `vim-herdr-navigator` binary on your `PATH`.
+
+**Plugin build hook (recommended):** if you install the companion Vim/Neovim
+plugin, its [`install.sh`](../install.sh) build hook installs this helper too —
+see the [root README](../README.md#install). The options below are for managing
+the helper yourself.
+
+**Shell installer (prebuilt binary, no Rust needed):**
+
+```sh
+curl -LsSf https://github.com/AVGVSTVS96/vim-herdr-navigator/releases/latest/download/vim-herdr-navigator-installer.sh | sh
+```
+
+Installs into `~/.local/bin`.
+
+**cargo-binstall (prebuilt binary via cargo):**
+
+```sh
+cargo binstall --git https://github.com/AVGVSTVS96/vim-herdr-navigator vim-herdr-navigator
+```
 
 **cargo install (build from git):**
 
@@ -51,19 +70,10 @@ git clone https://github.com/AVGVSTVS96/vim-herdr-navigator
 cd vim-herdr-navigator
 cargo build --release
 # binary is at target/release/vim-herdr-navigator
-```
-
-**Symlink the release binary** onto your `PATH` (handy for local/dev use):
-
-```sh
 ln -sf "$PWD/target/release/vim-herdr-navigator" ~/.local/bin/vim-herdr-navigator
 ```
 
-Make sure the install target (`~/.cargo/bin`, `~/.local/bin`, etc.) is on `PATH`.
-
-> Prebuilt binaries via [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall)
-> will be available once tagged GitHub releases with binary artifacts are
-> published. Until then, use `cargo install` or a source build above.
+Make sure the install target (`~/.local/bin`, `~/.cargo/bin`, etc.) is on `PATH`.
 
 Verify:
 

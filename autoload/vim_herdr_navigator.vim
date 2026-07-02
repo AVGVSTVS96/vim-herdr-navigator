@@ -1,5 +1,8 @@
 " Classic Vim adapter for vim-herdr-navigator.
 
+" This file lives at <plugin-root>/autoload/vim_herdr_navigator.vim.
+let s:plugin_root = expand('<sfile>:p:h:h')
+
 let s:marker_stale_seconds = 10
 
 let s:defaults = {
@@ -59,7 +62,17 @@ function! s:entry_dir() abort
   return s:cache_home() . '/vim-herdr-navigator/entry'
 endfunction
 
+" Helper resolution order: an explicit `helper` setting wins; otherwise prefer
+" the plugin-local binary installed by install.sh (the plugin-manager build
+" hook), which is version-locked to this checkout; otherwise fall back to
+" whatever `vim-herdr-navigator` is on PATH.
 function! s:resolve_helper() abort
+  if s:config.helper ==# s:defaults.helper
+    let l:hook_installed = s:plugin_root . '/bin/vim-herdr-navigator'
+    if executable(l:hook_installed)
+      return l:hook_installed
+    endif
+  endif
   let l:expanded = expand(s:config.helper)
   if executable(l:expanded)
     return l:expanded

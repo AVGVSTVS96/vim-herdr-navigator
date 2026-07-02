@@ -8,3 +8,5 @@ vim-herdr-navigator also adds support for:
 - Opt-in entry markers (`VIM_HERDR_NAVIGATOR_ENTRY_MARKERS`) to land on the split nearest the entered edge.
 - Env-var config shared by both halves: `VIM_HERDR_NAVIGATOR_PATTERN` (extra Vim-like detection) and `VIM_HERDR_NAVIGATOR_ZOOM` (unzoom on move).
 
+Use conventional commit messages (`feat:`, `fix:`, ...): release-plz derives version bumps and changelog entries from them.
+

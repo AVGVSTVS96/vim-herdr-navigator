@@ -31,8 +31,10 @@ as if they were one grid.
 
 - Vim 8.2+ or Neovim 0.8+ (Neovim 0.10+ recommended; uses |vim.system()| when available)
 - Herdr, with the `herdr` CLI on your PATH
-- The `vim-herdr-navigator` helper (a small Rust binary) installed and on your
-  PATH
+- The `vim-herdr-navigator` helper (a small Rust binary). The plugin's
+  `install.sh` build hook installs it automatically (run by e.g. lazy.nvim
+  `build = "./install.sh"` or vim-plug `{ 'do': './install.sh' }`); it can
+  also be installed manually on your PATH.
 
 ==============================================================================
 3. SETUP                                             *vim-herdr-navigator-setup*
@@ -124,8 +126,10 @@ Neovim defaults: >lua
     })
 <
 helper                                              *vim-herdr-navigator-helper*
-    Name or path of the helper command. Defaults to `vim-herdr-navigator` on
-    PATH. `~` is expanded.
+    Name or path of the helper command. `~` is expanded. When left at the
+    default (`vim-herdr-navigator`), the plugin prefers the binary installed
+    by the `install.sh` build hook at `<plugin dir>/bin/vim-herdr-navigator`
+    (version-locked to the plugin checkout) and falls back to PATH.
 
 set_keymaps                                    *vim-herdr-navigator-set_keymaps*
     When true (default), the plugin owns <C-h/j/k/l>: the maps

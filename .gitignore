@@ -1,6 +1,9 @@
 # Rust
 /target
 
+# Helper binary installed by install.sh (plugin-manager build hook)
+/bin
+
 # OS
 .DS_Store
 .luarc.json

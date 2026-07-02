@@ -83,6 +83,24 @@ local function executable(command)
   return nil
 end
 
+-- This file lives at <plugin-root>/lua/vim-herdr-navigator/init.lua.
+local plugin_root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":h:h:h")
+
+-- Helper resolution order: an explicit `helper` option wins; otherwise prefer
+-- the plugin-local binary installed by install.sh (the plugin-manager build
+-- hook), which is version-locked to this checkout; otherwise fall back to
+-- whatever `vim-herdr-navigator` is on PATH.
+local function resolve_helper()
+  if config.helper ~= defaults.helper then
+    return executable(config.helper)
+  end
+  local hook_installed = plugin_root .. "/bin/vim-herdr-navigator"
+  if vim.fn.executable(hook_installed) == 1 then
+    return hook_installed
+  end
+  return executable(config.helper)
+end
+
 local function notify_once_missing_helper()
   if warned_missing_helper then
     return
@@ -99,7 +117,7 @@ local function run_helper(args)
     return
   end
 
-  local helper = executable(config.helper)
+  local helper = resolve_helper()
   if not helper then
     notify_once_missing_helper()
     return
@@ -355,7 +373,7 @@ end
 
 -- Resolve the configured helper to an executable path, or nil if not found.
 function M.resolve_helper()
-  return executable(config.helper)
+  return resolve_helper()
 end
 
 -- True when running inside a Herdr session.

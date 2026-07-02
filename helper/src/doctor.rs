@@ -36,6 +36,19 @@ fn which(name: &str) -> Option<PathBuf> {
     None
 }
 
+/// Version another copy of the helper reports, e.g. "0.1.0".
+fn version_of(path: &std::path::Path) -> Option<String> {
+    let output = std::process::Command::new(path)
+        .arg("--version")
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    stdout.split_whitespace().last().map(str::to_string)
+}
+
 #[cfg(unix)]
 fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
@@ -75,6 +88,36 @@ pub fn run() -> i32 {
         Status::Ok,
         format!("{HELPER_NAME} {}", env!("CARGO_PKG_VERSION")),
     ));
+
+    // Herdr keybindings invoke the helper by name, so a stale copy earlier on
+    // PATH would shadow this one even though Neovim resolves its own.
+    match which(HELPER_NAME) {
+        Some(on_path) => match version_of(&on_path) {
+            Some(theirs) if theirs != env!("CARGO_PKG_VERSION") => checks.push((
+                Status::Warn,
+                format!(
+                    "PATH resolves {HELPER_NAME} to {} ({theirs}), which shadows this binary ({}); remove it or reorder PATH",
+                    on_path.display(),
+                    env!("CARGO_PKG_VERSION"),
+                ),
+            )),
+            Some(_) => checks.push((
+                Status::Ok,
+                format!("{HELPER_NAME} on PATH: {}", on_path.display()),
+            )),
+            None => checks.push((
+                Status::Warn,
+                format!(
+                    "could not determine the version of {} on PATH; it may shadow this binary",
+                    on_path.display()
+                ),
+            )),
+        },
+        None => checks.push((
+            Status::Warn,
+            format!("{HELPER_NAME} not on PATH; Herdr keybindings that call it by name will fail"),
+        )),
+    }
 
     match which("herdr") {
         Some(path) => {
