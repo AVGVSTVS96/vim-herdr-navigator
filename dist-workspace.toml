@@ -17,3 +17,9 @@ pr-run-mode = "plan"
 install-path = "~/.local/bin"
 # Whether to install an updater program
 install-updater = false
+
+# dist defaults Apple targets to retired Intel macos-13 runners; build both on
+# ARM runners instead (x86_64 cross-compiles with the same Apple toolchain).
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+x86_64-apple-darwin = "macos-14"

@@ -167,6 +167,18 @@ install_into_path() {
   fi
 }
 
+# Last resort when neither download nor source build worked: keep an already
+# installed older binary. Releases lag a plugin update by a few minutes while
+# CI builds, and a working previous version beats a failed hook.
+keep_existing() {
+  [ -x "$BIN" ] || return 1
+  have=$("$BIN" --version 2>/dev/null) || return 1
+  [ -n "$have" ] || return 1
+  warn "v$ver is not downloadable yet; keeping $have (re-run or update again later to retry)"
+  install_into_path "${have#"$NAME "}"
+  exit 0
+}
+
 main() {
   ver=$(version)
   [ -n "$ver" ] || fail "could not read version from helper/Cargo.toml"
@@ -183,7 +195,7 @@ main() {
   else
     install_from_release "$ver" || {
       warn "falling back to building from source"
-      install_from_source || fail "no prebuilt binary and the source build failed.
+      install_from_source || keep_existing || fail "no prebuilt binary and the source build failed.
   Install Rust (https://rustup.rs) and re-run, or download a release manually:
   https://github.com/$REPO/releases"
     }
