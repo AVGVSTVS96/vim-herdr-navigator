@@ -6,3 +6,8 @@ publish = false
 git_release_enable = false
 # Match the tag format dist's release workflow triggers on.
 git_tag_name = "v{{ version }}"
+
+[[package]]
+name = "vim-herdr-navigator"
+# The repo-root changelog, not the per-package default (helper/CHANGELOG.md).
+changelog_path = "./CHANGELOG.md"
