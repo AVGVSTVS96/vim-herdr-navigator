@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["* 0-3 1-7,15-21 * 1"],
+  "prConcurrentLimit": 1,
+  "separateMajorMinor": false,
+  "recreateWhen": "always",
+  "packageRules": [
+    {
+      "matchPackageNames": ["*"],
+      "groupName": "all dependencies"
+    }
+  ]
+}
